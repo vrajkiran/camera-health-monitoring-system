@@ -9,7 +9,7 @@ This application is focused on camera health monitoring and operational decision
 1. Open the project folder:
 
 ```powershell
-cd "C:\Users\Intel\OneDrive\문서\Projects\cc-camera-frontend-only"
+cd "C:\Users\Intel\OneDrive\문서\Projects\camera-health-monitoring-system"
 ```
 
 2. Start the backend and frontend together:
@@ -75,7 +75,7 @@ This means `http://127.0.0.1:8000` is the main application URL.
 ## Project Structure
 
 ```text
-cc-camera-frontend-only/
+camera-health-monitoring-system/
   backend/                 Python backend, database, monitoring, ML, alerts
   dist/index.html          Production frontend, keyboard controls, dark mode, AI highlights
   docs/                    Project documentation

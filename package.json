@@ -1,5 +1,5 @@
 ﻿{
-  "name": "ucek-jntuk-camera-health-monitor",
+  "name": "camera-health-monitoring-system",
   "version": "1.0.0",
   "private": true,
   "description": "Static enterprise camera health dashboard served by the Python backend.",

@@ -20,7 +20,7 @@ The backend serves both the API and the frontend.
 Open PowerShell in the project folder:
 
 ```powershell
-cd "C:\Users\Intel\OneDrive\문서\Projects\cc-camera-frontend-only"
+cd "C:\Users\Intel\OneDrive\문서\Projects\camera-health-monitoring-system"
 ```
 
 Start the application:

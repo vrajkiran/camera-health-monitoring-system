@@ -7,7 +7,7 @@ The backend is not running or port 8000 is unavailable.
 Fix:
 
 ```powershell
-cd "C:\Users\Intel\OneDrive\문서\Projects\cc-camera-frontend-only"
+cd "C:\Users\Intel\OneDrive\문서\Projects\camera-health-monitoring-system"
 .\run-backend-logged.bat
 ```
 
