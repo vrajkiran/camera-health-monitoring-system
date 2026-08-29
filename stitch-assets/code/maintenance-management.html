@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Maintenance Management - Vigilant Platform</title>
+<!-- Google Fonts & Material Symbols -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "border-high-contrast": "#e5e7eb",
+                        "secondary": "#565e74",
+                        "status-purple": "#7c3aed",
+                        "surface-variant": "#e1e2ed",
+                        "surface-container-highest": "#e1e2ed",
+                        "inverse-primary": "#b4c5ff",
+                        "on-primary-fixed": "#00174b",
+                        "surface-dim": "#d9d9e5",
+                        "on-background": "#191b23",
+                        "tertiary-fixed": "#ffdbcd",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#dae2fd",
+                        "on-primary-container": "#eeefff",
+                        "tertiary-container": "#bc4800",
+                        "outline-variant": "#c3c6d7",
+                        "primary-fixed": "#dbe1ff",
+                        "background": "#faf8ff",
+                        "tertiary": "#943700",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "status-amber": "#f59e0b",
+                        "inverse-on-surface": "#f0f0fb",
+                        "inverse-surface": "#2e3039",
+                        "on-secondary-container": "#5c647a",
+                        "primary-container": "#2563eb",
+                        "secondary-container": "#dae2fd",
+                        "on-secondary-fixed": "#131b2e",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#360f00",
+                        "surface-bright": "#faf8ff",
+                        "primary": "#004ac6",
+                        "outline": "#737686",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#0053db",
+                        "on-surface": "#191b23",
+                        "surface-container": "#ededf9",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "status-green": "#16a34a",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "surface-container-low": "#f3f3fe",
+                        "status-red": "#ef4444",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "bg-subtle": "#f8fafc",
+                        "surface": "#faf8ff",
+                        "on-tertiary-container": "#ffede6",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "surface-container-high": "#e7e7f3",
+                        "on-surface-variant": "#434655"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter-default": "16px",
+                        "sidebar-collapsed": "72px",
+                        "sidebar-desktop": "260px",
+                        "base": "4px",
+                        "margin-mobile": "14px",
+                        "panel-padding": "20px",
+                        "margin-page": "32px"
+                    },
+                    "fontFamily": {
+                        "body-medium": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "kpi-value": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "kpi-value-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-default": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-medium": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "kpi-value": ["34px", { "lineHeight": "34px", "fontWeight": "700" }],
+                        "headline-lg": ["20px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "kpi-value-mobile": ["28px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-md": ["18px", { "lineHeight": "22px", "fontWeight": "600" }],
+                        "body-default": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        /* Custom scrollbar for panels to maintain clean UI */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background-color: #c3c6d7;
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background-color: #737686;
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-default antialiased selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[260px] flex flex-col z-40 bg-surface-container-low border-r border-border-high-contrast transition-opacity duration-200">
+<!-- Brand Header -->
+<div class="h-16 flex items-center px-6 border-b border-border-high-contrast bg-surface-container-low shrink-0">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined text-lg" style="font-variation-settings: 'FILL' 1;">security</span>
+</div>
+<div>
+<div class="text-headline-md font-headline-md font-bold text-primary tracking-tight">Vigilant Platform</div>
+<div class="text-label-sm font-label-sm text-secondary">System Monitoring</div>
+</div>
+</div>
+</div>
+<!-- Navigation Links -->
+<div class="flex-1 overflow-y-auto py-4 px-3 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-highest transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">dashboard</span>
+<span class="text-label-caps font-label-caps uppercase tracking-wider">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-highest transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">hub</span>
+<span class="text-label-caps font-label-caps uppercase tracking-wider">Topology</span>
+</a>
+<!-- Active Tab: Assets (closest fit for Maintenance) -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-primary font-bold border-l-4 border-primary bg-surface-container-highest opacity-90 transition-opacity" href="#">
+<span class="material-symbols-outlined text-[20px]" style="font-variation-settings: 'FILL' 1;">videocam</span>
+<span class="text-label-caps font-label-caps uppercase tracking-wider">Assets</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-highest transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">warning</span>
+<span class="text-label-caps font-label-caps uppercase tracking-wider">Incidents</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-highest transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:text-primary transition-colors">analytics</span>
+<span class="text-label-caps font-label-caps uppercase tracking-wider">Analytics</span>
+</a>
+</div>
+<!-- Footer Links -->
+<div class="p-3 border-t border-border-high-contrast flex flex-col gap-1 bg-surface-container-low shrink-0">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-highest transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">settings</span>
+<span class="text-label-caps font-label-caps uppercase tracking-wider">Settings</span>
+</a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-secondary hover:text-on-surface hover:bg-surface-container-highest transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined text-[20px]">help</span>
+<span class="text-label-caps font-label-caps uppercase tracking-wider">Support</span>
+</a>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-[260px] h-16 flex justify-between items-center px-gutter-default z-30 bg-surface border-b border-border-high-contrast shadow-sm transition-all focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2">
+<div class="flex items-center gap-4 flex-1">
+<h2 class="text-headline-lg font-headline-lg font-extrabold text-primary tracking-tight">System Health</h2>
+<!-- Optional Search placeholder if search_bar: on_left was fully spec'd, adding a subtle visual anchor -->
+<div class="hidden lg:flex items-center ml-8 bg-surface-container-low border border-border-high-contrast rounded-lg px-3 py-1.5 w-64 focus-within:border-primary focus-within:ring-1 focus-within:ring-primary transition-all">
+<span class="material-symbols-outlined text-secondary text-sm mr-2">search</span>
+<input class="bg-transparent border-none focus:ring-0 text-body-medium font-body-medium text-on-surface placeholder:text-outline w-full p-0" placeholder="Search assets or IPs..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-2">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-all relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2.5 w-2 h-2 rounded-full bg-status-red border border-surface"></span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-all">
+<span class="material-symbols-outlined">dns</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:bg-surface-container-low hover:text-primary transition-all ml-2 border border-border-high-contrast overflow-hidden">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[260px] pt-16 min-h-screen bg-bg-subtle p-margin-page flex flex-col gap-6">
+<!-- Page Header -->
+<div class="flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-2">
+<div>
+<h1 class="text-headline-lg font-headline-lg text-on-surface mb-1">Maintenance Management</h1>
+<p class="text-body-medium font-body-medium text-secondary">Schedule downtime, track technician activity, and manage alert suppression.</p>
+</div>
+<div class="flex gap-3">
+<button class="px-4 py-2 rounded-lg border border-border-high-contrast bg-surface-container-lowest text-on-surface text-body-medium font-body-medium font-semibold hover:bg-surface-container-low transition-colors flex items-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">download</span>
+                    Export Log
+                </button>
+</div>
+</div>
+<!-- KPI Bento Grid (Information Density) -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- KPI 1 -->
+<div class="bg-surface-container-lowest border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,.02)] hover:-translate-y-[1px] hover:shadow-[0_12px_28px_rgba(15,23,42,.05)] transition-all duration-300 relative overflow-hidden group">
+<div class="absolute left-0 top-0 bottom-0 w-[3px] bg-status-amber"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-caps font-label-caps text-secondary uppercase tracking-wider">Active Windows</span>
+<div class="w-8 h-8 rounded-lg bg-status-amber/10 flex items-center justify-center text-status-amber">
+<span class="material-symbols-outlined text-[18px]">construction</span>
+</div>
+</div>
+<div class="text-kpi-value font-kpi-value text-on-surface">14</div>
+<div class="mt-2 text-label-sm font-label-sm text-secondary flex items-center gap-1">
+<span class="text-status-amber flex items-center"><span class="material-symbols-outlined text-[12px]">arrow_upward</span> 2</span> since yesterday
+                </div>
+</div>
+<!-- KPI 2 -->
+<div class="bg-surface-container-lowest border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,.02)] hover:-translate-y-[1px] hover:shadow-[0_12px_28px_rgba(15,23,42,.05)] transition-all duration-300 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-[3px] bg-primary"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-caps font-label-caps text-secondary uppercase tracking-wider">Upcoming Scheduled</span>
+<div class="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+<span class="material-symbols-outlined text-[18px]">calendar_clock</span>
+</div>
+</div>
+<div class="text-kpi-value font-kpi-value text-on-surface">32</div>
+<div class="mt-2 text-label-sm font-label-sm text-secondary flex items-center gap-1">
+                    Next window in <span class="text-on-surface font-semibold">2h 15m</span>
+</div>
+</div>
+<!-- KPI 3 -->
+<div class="bg-surface-container-lowest border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,.02)] hover:-translate-y-[1px] hover:shadow-[0_12px_28px_rgba(15,23,42,.05)] transition-all duration-300 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-[3px] bg-status-red"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-caps font-label-caps text-secondary uppercase tracking-wider">Overdue Maintenance</span>
+<div class="w-8 h-8 rounded-lg bg-status-red/10 flex items-center justify-center text-status-red">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+</div>
+</div>
+<div class="text-kpi-value font-kpi-value text-on-surface">7</div>
+<div class="mt-2 text-label-sm font-label-sm text-secondary flex items-center gap-1">
+<span class="text-status-red font-semibold">Action required</span> on Zone B
+                </div>
+</div>
+<!-- KPI 4 -->
+<div class="bg-surface-container-lowest border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,.02)] hover:-translate-y-[1px] hover:shadow-[0_12px_28px_rgba(15,23,42,.05)] transition-all duration-300 relative overflow-hidden">
+<div class="absolute left-0 top-0 bottom-0 w-[3px] bg-status-green"></div>
+<div class="flex justify-between items-start mb-2">
+<span class="text-label-caps font-label-caps text-secondary uppercase tracking-wider">Techs Online</span>
+<div class="w-8 h-8 rounded-lg bg-status-green/10 flex items-center justify-center text-status-green">
+<span class="material-symbols-outlined text-[18px]">engineering</span>
+</div>
+</div>
+<div class="text-kpi-value font-kpi-value text-on-surface">12</div>
+<div class="mt-2 text-label-sm font-label-sm text-secondary flex items-center gap-1">
+                    Across 4 active sites
+                </div>
+</div>
+</div>
+<!-- Main Layout: 8/4 Split -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+<!-- Left Column (8 cols): Schedule & Active List -->
+<div class="lg:col-span-8 flex flex-col gap-6">
+<div class="bg-surface-container-lowest border border-border-high-contrast rounded-xl shadow-[0_10px_24px_rgba(15,23,42,.02)] overflow-hidden flex flex-col h-[500px]">
+<div class="px-6 py-4 border-b border-border-high-contrast flex justify-between items-center bg-surface-bright shrink-0">
+<h3 class="text-headline-md font-headline-md text-on-surface">Active &amp; Upcoming Windows</h3>
+<div class="flex gap-2">
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-label-sm font-label-sm font-semibold bg-surface-container-low text-secondary border border-border-high-contrast cursor-pointer hover:bg-surface-container-highest">All</span>
+<span class="inline-flex items-center px-2.5 py-1 rounded-full text-label-sm font-label-sm font-semibold bg-primary/10 text-primary-fixed-variant border border-primary/20 cursor-pointer">Active</span>
+</div>
+</div>
+<div class="overflow-y-auto custom-scrollbar flex-1 p-0">
+<table class="w-full text-left border-collapse">
+<thead class="bg-bg-subtle sticky top-0 z-10">
+<tr>
+<th class="px-6 py-3 text-label-caps font-label-caps text-secondary border-b border-border-high-contrast font-semibold tracking-wider">Asset / Location</th>
+<th class="px-6 py-3 text-label-caps font-label-caps text-secondary border-b border-border-high-contrast font-semibold tracking-wider">Type</th>
+<th class="px-6 py-3 text-label-caps font-label-caps text-secondary border-b border-border-high-contrast font-semibold tracking-wider">Window</th>
+<th class="px-6 py-3 text-label-caps font-label-caps text-secondary border-b border-border-high-contrast font-semibold tracking-wider">Status</th>
+<th class="px-6 py-3 text-label-caps font-label-caps text-secondary border-b border-border-high-contrast font-semibold tracking-wider text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="text-body-default font-body-default divide-y divide-border-high-contrast">
+<!-- Row 1 Active -->
+<tr class="hover:bg-bg-subtle transition-colors group">
+<td class="px-6 py-4">
+<div class="font-medium text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">videocam</span>
+                                            CAM-EXT-042
+                                        </div>
+<div class="text-label-sm font-label-sm text-secondary mt-0.5">North Perimeter Gate</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">Lens Calibration</td>
+<td class="px-6 py-4">
+<div class="text-on-surface">10:00 AM - 12:00 PM</div>
+<div class="text-label-sm font-label-sm text-secondary mt-0.5">Today</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-label-sm font-medium bg-status-amber/10 text-status-amber border border-status-amber/20">
+<span class="w-1.5 h-1.5 rounded-full bg-status-amber animate-pulse"></span>
+                                            In Progress
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-secondary hover:text-primary transition-colors p-1" title="View Details">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 2 Scheduled -->
+<tr class="hover:bg-bg-subtle transition-colors group">
+<td class="px-6 py-4">
+<div class="font-medium text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">router</span>
+                                            SW-CORE-02
+                                        </div>
+<div class="text-label-sm font-label-sm text-secondary mt-0.5">Server Room Alpha</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">Firmware Patch</td>
+<td class="px-6 py-4">
+<div class="text-on-surface">02:00 AM - 04:00 AM</div>
+<div class="text-label-sm font-label-sm text-secondary mt-0.5">Tomorrow</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-label-sm font-medium bg-primary/10 text-primary-fixed-variant border border-primary/20">
+                                            Scheduled
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-secondary hover:text-primary transition-colors p-1" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</td>
+</tr>
+<!-- Row 3 Active -->
+<tr class="hover:bg-bg-subtle transition-colors group">
+<td class="px-6 py-4">
+<div class="font-medium text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">videocam</span>
+                                            CAM-INT-105
+                                        </div>
+<div class="text-label-sm font-label-sm text-secondary mt-0.5">Lobby Turnstiles</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">Hardware Replacement</td>
+<td class="px-6 py-4">
+<div class="text-on-surface">09:00 AM - 05:00 PM</div>
+<div class="text-label-sm font-label-sm text-status-red mt-0.5">Extended</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-label-sm font-medium bg-status-amber/10 text-status-amber border border-status-amber/20">
+<span class="w-1.5 h-1.5 rounded-full bg-status-amber animate-pulse"></span>
+                                            In Progress
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-secondary hover:text-primary transition-colors p-1" title="View Details">
+<span class="material-symbols-outlined text-[18px]">visibility</span>
+</button>
+</td>
+</tr>
+<!-- Row 4 Scheduled -->
+<tr class="hover:bg-bg-subtle transition-colors group">
+<td class="px-6 py-4">
+<div class="font-medium text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-[16px] text-secondary">hub</span>
+                                            CTRL-ZONE-C
+                                        </div>
+<div class="text-label-sm font-label-sm text-secondary mt-0.5">Warehouse Sector C</div>
+</td>
+<td class="px-6 py-4 text-on-surface-variant">Diagnostic Run</td>
+<td class="px-6 py-4">
+<div class="text-on-surface">14:00 PM - 15:30 PM</div>
+<div class="text-label-sm font-label-sm text-secondary mt-0.5">Oct 24, 2023</div>
+</td>
+<td class="px-6 py-4">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-label-sm font-label-sm font-medium bg-primary/10 text-primary-fixed-variant border border-primary/20">
+                                            Scheduled
+                                        </span>
+</td>
+<td class="px-6 py-4 text-right">
+<button class="text-secondary hover:text-primary transition-colors p-1" title="Edit">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</div>
+<!-- Right Column (4 cols): Enable Maintenance Mode Action Panel -->
+<div class="lg:col-span-4 flex flex-col">
+<div class="bg-surface-container-lowest border border-border-high-contrast rounded-xl shadow-[0_10px_24px_rgba(15,23,42,.02)] p-6 relative overflow-hidden">
+<!-- Subtle background decoration -->
+<div class="absolute top-0 right-0 -mr-8 -mt-8 w-32 h-32 bg-primary/5 rounded-full blur-2xl pointer-events-none"></div>
+<div class="flex items-center gap-3 mb-6">
+<div class="w-10 h-10 rounded-lg bg-surface-container-low flex items-center justify-center text-primary border border-border-high-contrast">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">power_settings_new</span>
+</div>
+<div>
+<h3 class="text-headline-md font-headline-md text-on-surface font-semibold">Enable Maintenance</h3>
+<p class="text-label-sm font-label-sm text-secondary">Suppress false-positive alerts instantly.</p>
+</div>
+</div>
+<form class="space-y-5">
+<!-- Asset Selection -->
+<div class="space-y-1.5">
+<label class="block text-body-medium font-body-medium text-on-surface font-medium">Target Asset</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-2.5 text-secondary text-[18px] pointer-events-none">search</span>
+<input class="w-full pl-10 pr-3 h-[38px] rounded-lg border border-border-high-contrast bg-surface text-body-default focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-outline transition-shadow" placeholder="Search ID or IP..." type="text"/>
+</div>
+</div>
+<!-- Device Type Toggle (Visual) -->
+<div class="grid grid-cols-2 gap-2">
+<label class="cursor-pointer">
+<input checked="" class="peer sr-only" name="device_type" type="radio"/>
+<div class="px-3 py-2 rounded-lg border border-border-high-contrast bg-surface text-center peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary-fixed-variant transition-colors flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-[20px]">videocam</span>
+<span class="text-label-caps font-label-caps font-semibold">Cameras</span>
+</div>
+</label>
+<label class="cursor-pointer">
+<input class="peer sr-only" name="device_type" type="radio"/>
+<div class="px-3 py-2 rounded-lg border border-border-high-contrast bg-surface text-center peer-checked:bg-primary/10 peer-checked:border-primary peer-checked:text-primary-fixed-variant transition-colors flex flex-col items-center gap-1">
+<span class="material-symbols-outlined text-[20px]">router</span>
+<span class="text-label-caps font-label-caps font-semibold">Switches</span>
+</div>
+</label>
+</div>
+<!-- Duration -->
+<div class="space-y-1.5">
+<label class="block text-body-medium font-body-medium text-on-surface font-medium">Duration</label>
+<select class="w-full h-[38px] px-3 rounded-lg border border-border-high-contrast bg-surface text-body-default focus:ring-2 focus:ring-primary focus:border-primary transition-shadow appearance-none">
+<option>1 Hour (Quick Fix)</option>
+<option selected="">4 Hours (Standard)</option>
+<option>8 Hours (Shift)</option>
+<option>24 Hours (Extended)</option>
+<option>Custom Range...</option>
+</select>
+</div>
+<!-- Reason -->
+<div class="space-y-1.5">
+<label class="block text-body-medium font-body-medium text-on-surface font-medium">Reason Note</label>
+<textarea class="w-full p-3 rounded-lg border border-border-high-contrast bg-surface text-body-default focus:ring-2 focus:ring-primary focus:border-primary placeholder:text-outline transition-shadow resize-none" placeholder="Enter reason for suppression..." rows="3"></textarea>
+</div>
+<!-- Action -->
+<button class="w-full h-[40px] mt-2 rounded-lg bg-primary text-on-primary text-body-medium font-body-medium font-semibold hover:bg-primary-fixed-variant transition-colors shadow-sm flex items-center justify-center gap-2" type="button">
+<span class="material-symbols-outlined text-[18px]">verified_user</span>
+                            Enable Mode
+                        </button>
+</form>
+</div>
+</div>
+</div>
+<!-- Full Width: Technician Notes History -->
+<div class="bg-surface-container-lowest border border-border-high-contrast rounded-xl shadow-[0_10px_24px_rgba(15,23,42,.02)] mt-2">
+<div class="px-6 py-4 border-b border-border-high-contrast flex justify-between items-center bg-surface-bright rounded-t-xl">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-surface-container flex items-center justify-center text-secondary">
+<span class="material-symbols-outlined text-[18px]">history</span>
+</div>
+<h3 class="text-headline-md font-headline-md text-on-surface font-semibold">Technician Activity Log</h3>
+</div>
+<button class="text-primary text-label-sm font-label-sm font-semibold hover:underline">View All Records</button>
+</div>
+<div class="overflow-x-auto p-0">
+<table class="w-full text-left">
+<thead class="bg-bg-subtle border-b border-border-high-contrast">
+<tr>
+<th class="px-6 py-3 text-label-caps font-label-caps text-secondary font-semibold tracking-wider">Timestamp</th>
+<th class="px-6 py-3 text-label-caps font-label-caps text-secondary font-semibold tracking-wider">Technician</th>
+<th class="px-6 py-3 text-label-caps font-label-caps text-secondary font-semibold tracking-wider">Asset</th>
+<th class="px-6 py-3 text-label-caps font-label-caps text-secondary font-semibold tracking-wider">Action / Note</th>
+</tr>
+</thead>
+<tbody class="text-body-default font-body-default divide-y divide-border-high-contrast">
+<tr class="hover:bg-bg-subtle transition-colors">
+<td class="px-6 py-3.5 text-secondary whitespace-nowrap">Oct 23, 14:32:05</td>
+<td class="px-6 py-3.5 font-medium text-on-surface flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-secondary-container text-on-secondary-container flex items-center justify-center text-[10px] font-bold">J</div>
+                                J. Smith
+                            </td>
+<td class="px-6 py-3.5">
+<span class="px-2 py-0.5 rounded border border-border-high-contrast bg-surface text-label-sm font-label-sm text-on-surface-variant">CAM-EXT-042</span>
+</td>
+<td class="px-6 py-3.5 text-on-surface">Initiated lens calibration sequence. Expected duration 2 hours.</td>
+</tr>
+<tr class="hover:bg-bg-subtle transition-colors">
+<td class="px-6 py-3.5 text-secondary whitespace-nowrap">Oct 23, 11:15:22</td>
+<td class="px-6 py-3.5 font-medium text-on-surface flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-tertiary-container text-on-tertiary-container flex items-center justify-center text-[10px] font-bold">A</div>
+                                A. Davis
+                            </td>
+<td class="px-6 py-3.5">
+<span class="px-2 py-0.5 rounded border border-border-high-contrast bg-surface text-label-sm font-label-sm text-on-surface-variant">SW-CORE-01</span>
+</td>
+<td class="px-6 py-3.5 text-on-surface">Completed firmware upgrade to v4.2.1. Verified link stability.</td>
+</tr>
+<tr class="hover:bg-bg-subtle transition-colors">
+<td class="px-6 py-3.5 text-secondary whitespace-nowrap">Oct 23, 09:45:00</td>
+<td class="px-6 py-3.5 font-medium text-on-surface flex items-center gap-2">
+<div class="w-6 h-6 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center text-[10px] font-bold">M</div>
+                                M. Chen
+                            </td>
+<td class="px-6 py-3.5">
+<span class="px-2 py-0.5 rounded border border-border-high-contrast bg-surface text-label-sm font-label-sm text-on-surface-variant">CTRL-ZONE-A</span>
+</td>
+<td class="px-6 py-3.5 text-on-surface">Enabled maintenance mode. Suppressing PoE failure alerts during cabinet rewiring.</td>
+</tr>
+</tbody>
+</table>
+</div>
+</div>
+</main>
+</body></html>

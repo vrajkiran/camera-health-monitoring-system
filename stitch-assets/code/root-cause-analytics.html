@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Root Cause Analytics - Vigilant Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "border-high-contrast": "#e5e7eb",
+                        "secondary": "#565e74",
+                        "status-purple": "#7c3aed",
+                        "surface-variant": "#e1e2ed",
+                        "surface-container-highest": "#e1e2ed",
+                        "inverse-primary": "#b4c5ff",
+                        "on-primary-fixed": "#00174b",
+                        "surface-dim": "#d9d9e5",
+                        "on-background": "#191b23",
+                        "tertiary-fixed": "#ffdbcd",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#dae2fd",
+                        "on-primary-container": "#eeefff",
+                        "tertiary-container": "#bc4800",
+                        "outline-variant": "#c3c6d7",
+                        "primary-fixed": "#dbe1ff",
+                        "background": "#faf8ff",
+                        "tertiary": "#943700",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "status-amber": "#f59e0b",
+                        "inverse-on-surface": "#f0f0fb",
+                        "inverse-surface": "#2e3039",
+                        "on-secondary-container": "#5c647a",
+                        "primary-container": "#2563eb",
+                        "secondary-container": "#dae2fd",
+                        "on-secondary-fixed": "#131b2e",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#360f00",
+                        "surface-bright": "#faf8ff",
+                        "primary": "#004ac6",
+                        "outline": "#737686",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#0053db",
+                        "on-surface": "#191b23",
+                        "surface-container": "#ededf9",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "status-green": "#16a34a",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "surface-container-low": "#f3f3fe",
+                        "status-red": "#ef4444",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "bg-subtle": "#f8fafc",
+                        "surface": "#faf8ff",
+                        "on-tertiary-container": "#ffede6",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "surface-container-high": "#e7e7f3",
+                        "on-surface-variant": "#434655"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter-default": "16px",
+                        "sidebar-collapsed": "72px",
+                        "sidebar-desktop": "260px",
+                        "base": "4px",
+                        "margin-mobile": "14px",
+                        "panel-padding": "20px",
+                        "margin-page": "32px"
+                    },
+                    "fontFamily": {
+                        "body-medium": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "kpi-value": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "kpi-value-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-default": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-medium": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "kpi-value": ["34px", { "lineHeight": "34px", "fontWeight": "700" }],
+                        "headline-lg": ["20px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "kpi-value-mobile": ["28px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-md": ["18px", { "lineHeight": "22px", "fontWeight": "600" }],
+                        "body-default": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.filled {
+            font-variation-settings: 'FILL' 1;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(229, 231, 235, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-default antialiased overflow-x-hidden">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[260px] flex flex-col z-40 bg-background dark:bg-inverse-surface bg-surface-container-low dark:bg-inverse-surface border-r border-border-high-contrast dark:border-outline-variant flat no shadows hidden md:flex">
+<div class="p-6">
+<div class="flex items-center gap-3 mb-8">
+<div class="w-8 h-8 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined filled">monitoring</span>
+</div>
+<div>
+<h1 class="text-headline-md font-headline-md font-bold text-primary dark:text-primary-fixed">Vigilant Platform</h1>
+<p class="text-label-sm font-label-sm text-secondary">System Monitoring</p>
+</div>
+</div>
+<ul class="space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-fixed-variant hover:text-on-surface hover:bg-surface-container-highest dark:hover:bg-on-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-body-medium font-body-medium">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-fixed-variant hover:text-on-surface hover:bg-surface-container-highest dark:hover:bg-on-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">hub</span>
+<span class="text-body-medium font-body-medium">Topology</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-fixed-variant hover:text-on-surface hover:bg-surface-container-highest dark:hover:bg-on-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">videocam</span>
+<span class="text-body-medium font-body-medium">Assets</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-fixed-variant hover:text-on-surface hover:bg-surface-container-highest dark:hover:bg-on-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">warning</span>
+<span class="text-body-medium font-body-medium">Incidents</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary dark:text-primary-fixed-dim font-bold border-l-4 border-primary bg-surface-container-highest dark:bg-on-secondary-fixed transition-colors duration-200 opacity-90 transition-opacity" href="#">
+<span class="material-symbols-outlined filled">analytics</span>
+<span class="text-body-medium font-body-medium">Analytics</span>
+</a>
+</li>
+</ul>
+</div>
+<div class="mt-auto p-6 border-t border-border-high-contrast dark:border-outline-variant">
+<ul class="space-y-2">
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-fixed-variant hover:text-on-surface hover:bg-surface-container-highest dark:hover:bg-on-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-body-medium font-body-medium">Settings</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-secondary dark:text-on-secondary-fixed-variant hover:text-on-surface hover:bg-surface-container-highest dark:hover:bg-on-secondary-fixed transition-colors duration-200" href="#">
+<span class="material-symbols-outlined">help</span>
+<span class="text-body-medium font-body-medium">Support</span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-0 md:left-[260px] h-16 flex justify-between items-center px-gutter-default z-30 bg-surface dark:bg-on-background bg-surface dark:bg-on-background border-b border-border-high-contrast dark:border-outline-variant shadow-sm focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<div class="flex items-center gap-4">
+<button class="md:hidden text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-secondary-container transition-all p-2 rounded-full">
+<span class="material-symbols-outlined">menu</span>
+</button>
+<h2 class="text-headline-lg font-headline-lg text-primary dark:text-inverse-primary">System Health</h2>
+</div>
+<div class="flex items-center gap-2">
+<button class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-secondary-container transition-all p-2 rounded-full">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-secondary-container transition-all p-2 rounded-full">
+<span class="material-symbols-outlined">dns</span>
+</button>
+<button class="text-on-surface-variant dark:text-surface-variant hover:bg-surface-container-low dark:hover:bg-secondary-container transition-all p-2 rounded-full">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content -->
+<main class="md:ml-[260px] pt-24 p-margin-mobile md:p-margin-page pb-20 md:pb-margin-page min-h-screen">
+<div class="mb-8">
+<h2 class="text-headline-lg font-headline-lg text-on-surface mb-2">Root Cause Analytics</h2>
+<p class="text-body-default font-body-default text-secondary">Diagnostic overview of system failures and resolution metrics.</p>
+</div>
+<!-- Metrics Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+<!-- Metric Card 1 -->
+<div class="bg-surface-container-lowest rounded-2xl p-panel-padding shadow-sm border border-border-high-contrast border-l-4 border-l-status-red hover:-translate-y-[1px] hover:shadow-md transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-xl bg-error-container text-on-error-container flex items-center justify-center">
+<span class="material-symbols-outlined">timer</span>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container text-secondary text-label-caps font-label-caps">MTTR</span>
+</div>
+<div>
+<p class="text-label-sm font-label-sm text-secondary uppercase tracking-wider mb-1">Avg Resolution Time</p>
+<p class="text-kpi-value md:text-kpi-value font-kpi-value text-on-surface">42m</p>
+<p class="text-label-sm font-label-sm text-status-green flex items-center gap-1 mt-2">
+<span class="material-symbols-outlined text-[16px]">trending_down</span>
+                        12% from last week
+                    </p>
+</div>
+</div>
+<!-- Metric Card 2 -->
+<div class="bg-surface-container-lowest rounded-2xl p-panel-padding shadow-sm border border-border-high-contrast border-l-4 border-l-status-amber hover:-translate-y-[1px] hover:shadow-md transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-xl bg-tertiary-container text-on-tertiary-container flex items-center justify-center">
+<span class="material-symbols-outlined">schedule</span>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container text-secondary text-label-caps font-label-caps">MTBF</span>
+</div>
+<div>
+<p class="text-label-sm font-label-sm text-secondary uppercase tracking-wider mb-1">Avg Downtime</p>
+<p class="text-kpi-value md:text-kpi-value font-kpi-value text-on-surface">14m</p>
+<p class="text-label-sm font-label-sm text-status-red flex items-center gap-1 mt-2">
+<span class="material-symbols-outlined text-[16px]">trending_up</span>
+                        5% from last week
+                    </p>
+</div>
+</div>
+<!-- Metric Card 3 -->
+<div class="bg-surface-container-lowest rounded-2xl p-panel-padding shadow-sm border border-border-high-contrast border-l-4 border-l-status-purple hover:-translate-y-[1px] hover:shadow-md transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="w-10 h-10 rounded-xl bg-secondary-container text-on-secondary-container flex items-center justify-center">
+<span class="material-symbols-outlined">bug_report</span>
+</div>
+<span class="px-3 py-1 rounded-full bg-surface-container text-secondary text-label-caps font-label-caps">TOTAL</span>
+</div>
+<div>
+<p class="text-label-sm font-label-sm text-secondary uppercase tracking-wider mb-1">Total Failures (30d)</p>
+<p class="text-kpi-value md:text-kpi-value font-kpi-value text-on-surface">128</p>
+<p class="text-label-sm font-label-sm text-secondary flex items-center gap-1 mt-2">
+<span class="material-symbols-outlined text-[16px]">remove</span>
+                        No change
+                    </p>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+<!-- Main Chart Area -->
+<div class="lg:col-span-2 bg-surface-container-lowest rounded-2xl p-panel-padding shadow-sm border border-border-high-contrast">
+<div class="flex justify-between items-center mb-6">
+<h3 class="text-headline-md font-headline-md text-on-surface">Top Failure Causes</h3>
+<div class="flex gap-2">
+<button class="px-3 py-1 rounded bg-surface-container-low text-label-caps font-label-caps text-secondary border border-border-high-contrast">7D</button>
+<button class="px-3 py-1 rounded bg-primary text-label-caps font-label-caps text-on-primary">30D</button>
+</div>
+</div>
+<div class="h-72 w-full">
+<canvas id="failureChart"></canvas>
+</div>
+</div>
+<!-- Problematic Assets Sidebar -->
+<div class="lg:col-span-1 bg-surface-container-lowest rounded-2xl p-0 shadow-sm border border-border-high-contrast flex flex-col h-full">
+<div class="p-5 border-b border-border-high-contrast flex justify-between items-center bg-surface-subtle rounded-t-2xl">
+<h3 class="text-headline-md font-headline-md text-on-surface flex items-center gap-2">
+<span class="material-symbols-outlined text-status-red">build</span>
+                        Hardware Reviews
+                    </h3>
+</div>
+<div class="flex-1 overflow-y-auto">
+<div class="divide-y divide-border-high-contrast">
+<!-- Asset Item -->
+<div class="p-5 hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="text-body-medium font-body-medium text-on-surface group-hover:text-primary transition-colors">CAM-N-042</h4>
+<p class="text-label-sm font-label-sm text-secondary">North Corridor Entrance</p>
+</div>
+<span class="px-2 py-1 rounded-full bg-error-container text-on-error-container text-[10px] font-bold">12 FAILURES</span>
+</div>
+<div class="flex items-center gap-4 mt-3">
+<div class="flex-1">
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="text-secondary">RTSP Drops</span>
+<span class="text-status-red font-bold">85%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-red h-full rounded-full" style="width: 85%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Asset Item -->
+<div class="p-5 hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="text-body-medium font-body-medium text-on-surface group-hover:text-primary transition-colors">CAM-W-112</h4>
+<p class="text-label-sm font-label-sm text-secondary">West Perimeter Fence</p>
+</div>
+<span class="px-2 py-1 rounded-full bg-error-container text-on-error-container text-[10px] font-bold">9 FAILURES</span>
+</div>
+<div class="flex items-center gap-4 mt-3">
+<div class="flex-1">
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="text-secondary">Power Cycle</span>
+<span class="text-status-amber font-bold">60%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-amber h-full rounded-full" style="width: 60%"></div>
+</div>
+</div>
+</div>
+</div>
+<!-- Asset Item -->
+<div class="p-5 hover:bg-surface-container-low transition-colors group cursor-pointer">
+<div class="flex justify-between items-start mb-2">
+<div>
+<h4 class="text-body-medium font-body-medium text-on-surface group-hover:text-primary transition-colors">SVR-MAIN-02</h4>
+<p class="text-label-sm font-label-sm text-secondary">Data Center Alpha</p>
+</div>
+<span class="px-2 py-1 rounded-full bg-tertiary-container text-on-tertiary-container text-[10px] font-bold">5 FAILURES</span>
+</div>
+<div class="flex items-center gap-4 mt-3">
+<div class="flex-1">
+<div class="flex justify-between text-label-sm font-label-sm mb-1">
+<span class="text-secondary">High Temp</span>
+<span class="text-status-amber font-bold">45%</span>
+</div>
+<div class="w-full bg-surface-container h-1.5 rounded-full overflow-hidden">
+<div class="bg-status-amber h-full rounded-full" style="width: 45%"></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="p-4 border-t border-border-high-contrast bg-surface-container-lowest rounded-b-2xl">
+<button class="w-full py-2 bg-surface-container-low hover:bg-surface-container text-primary font-body-medium rounded-lg transition-colors border border-border-high-contrast">
+                        View All Assets
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const ctx = document.getElementById('failureChart').getContext('2d');
+            
+            // Tailwind colors
+            const primary = '#004ac6';
+            const amber = '#f59e0b';
+            const red = '#ef4444';
+            const purple = '#7c3aed';
+            const secondary = '#565e74';
+            const gridColor = '#e5e7eb';
+
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Network Latency', 'Power Fluctuations', 'RTSP Failure', 'Hardware Fault', 'Config Error'],
+                    datasets: [{
+                        label: 'Frequency',
+                        data: [45, 32, 28, 15, 8],
+                        backgroundColor: [
+                            primary,
+                            amber,
+                            red,
+                            purple,
+                            secondary
+                        ],
+                        borderRadius: 6,
+                        borderSkipped: false,
+                        barPercentage: 0.6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(25, 27, 35, 0.9)',
+                            titleFont: { family: 'Inter', size: 13 },
+                            bodyFont: { family: 'Inter', size: 14, weight: 'bold' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: gridColor,
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                font: { family: 'Inter', size: 11 },
+                                color: secondary,
+                                stepSize: 10
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                font: { family: 'Inter', size: 12 },
+                                color: secondary
+                            }
+                        }
+                    },
+                    interaction: {
+                        intersect: false,
+                        mode: 'index',
+                    },
+                }
+            });
+        });
+    </script>
+</body></html>

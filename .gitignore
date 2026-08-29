@@ -1,0 +1,37 @@
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Database and backups
+backend/*.db
+backend/*.backup.db
+backend/*.handover-backup.db
+backups/
+
+# Logs
+*.log
+backend/backend.log
+server.out.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.pytest_cache/
+*.egg-info/
+.venv/
+venv/
+
+# ML model artifacts (regenerated on startup)
+backend/ml/models/*.pkl
+
+# OS / editor
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+
+# Node (optional tooling only)
+node_modules/

@@ -1,0 +1,50 @@
+﻿[
+    {
+        "title":  "Network Topology Redesign",
+        "screenId":  "4da01f59366547529284e4f14ae97267",
+        "html":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\code\\network-topology-redesign.html",
+        "image":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\images\\network-topology-redesign.jpg",
+        "htmlBytes":  25313,
+        "imageBytes":  41324
+    },
+    {
+        "title":  "Incident Alerts \u0026 History",
+        "screenId":  "6d12fdce1fec452ba631f5f86a696c8f",
+        "html":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\code\\incident-alerts-history.html",
+        "image":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\images\\incident-alerts-history.jpg",
+        "htmlBytes":  22358,
+        "imageBytes":  57242
+    },
+    {
+        "title":  "Registered Assets Inventory",
+        "screenId":  "c7dac6574b79426b917c8cc69e6c5281",
+        "html":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\code\\registered-assets-inventory.html",
+        "image":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\images\\registered-assets-inventory.jpg",
+        "htmlBytes":  21465,
+        "imageBytes":  47124
+    },
+    {
+        "title":  "Root Cause Analytics",
+        "screenId":  "b91404d6e3c8411fac7c6801bfd1ecba",
+        "html":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\code\\root-cause-analytics.html",
+        "image":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\images\\root-cause-analytics.jpg",
+        "htmlBytes":  22341,
+        "imageBytes":  38403
+    },
+    {
+        "title":  "Executive Dashboard Redesign",
+        "screenId":  "430adc41f29a40b8ba69454c8febe5d7",
+        "html":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\code\\executive-dashboard-redesign.html",
+        "image":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\images\\executive-dashboard-redesign.jpg",
+        "htmlBytes":  35523,
+        "imageBytes":  51417
+    },
+    {
+        "title":  "Maintenance Management",
+        "screenId":  "d15fc713cc9a4f49ad8beb88153a6428",
+        "html":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\code\\maintenance-management.html",
+        "image":  "C:\\Users\\Intel\\OneDrive\\문서\\Projects\\cc-camera-frontend-only\\stitch-assets\\images\\maintenance-management.jpg",
+        "htmlBytes":  32029,
+        "imageBytes":  72071
+    }
+]

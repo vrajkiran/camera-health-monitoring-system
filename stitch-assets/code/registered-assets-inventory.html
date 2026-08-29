@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Registered Assets - Vigilant Platform</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "border-high-contrast": "#e5e7eb",
+                        "secondary": "#565e74",
+                        "status-purple": "#7c3aed",
+                        "surface-variant": "#e1e2ed",
+                        "surface-container-highest": "#e1e2ed",
+                        "inverse-primary": "#b4c5ff",
+                        "on-primary-fixed": "#00174b",
+                        "surface-dim": "#d9d9e5",
+                        "on-background": "#191b23",
+                        "tertiary-fixed": "#ffdbcd",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#dae2fd",
+                        "on-primary-container": "#eeefff",
+                        "tertiary-container": "#bc4800",
+                        "outline-variant": "#c3c6d7",
+                        "primary-fixed": "#dbe1ff",
+                        "background": "#faf8ff",
+                        "tertiary": "#943700",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "status-amber": "#f59e0b",
+                        "inverse-on-surface": "#f0f0fb",
+                        "inverse-surface": "#2e3039",
+                        "on-secondary-container": "#5c647a",
+                        "primary-container": "#2563eb",
+                        "secondary-container": "#dae2fd",
+                        "on-secondary-fixed": "#131b2e",
+                        "error": "#ba1a1a",
+                        "on-tertiary-fixed": "#360f00",
+                        "surface-bright": "#faf8ff",
+                        "primary": "#004ac6",
+                        "outline": "#737686",
+                        "on-primary": "#ffffff",
+                        "on-tertiary": "#ffffff",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "surface-container-lowest": "#ffffff",
+                        "surface-tint": "#0053db",
+                        "on-surface": "#191b23",
+                        "surface-container": "#ededf9",
+                        "on-error-container": "#93000a",
+                        "error-container": "#ffdad6",
+                        "status-green": "#16a34a",
+                        "on-error": "#ffffff",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "surface-container-low": "#f3f3fe",
+                        "status-red": "#ef4444",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "bg-subtle": "#f8fafc",
+                        "surface": "#faf8ff",
+                        "on-tertiary-container": "#ffede6",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "surface-container-high": "#e7e7f3",
+                        "on-surface-variant": "#434655"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter-default": "16px",
+                        "sidebar-collapsed": "72px",
+                        "sidebar-desktop": "260px",
+                        "base": "4px",
+                        "margin-mobile": "14px",
+                        "panel-padding": "20px",
+                        "margin-page": "32px"
+                    },
+                    "fontFamily": {
+                        "body-medium": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "kpi-value": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "label-sm": ["Inter"],
+                        "kpi-value-mobile": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "body-default": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-medium": ["14px", { "lineHeight": "20px", "fontWeight": "500" }],
+                        "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+                        "kpi-value": ["34px", { "lineHeight": "34px", "fontWeight": "700" }],
+                        "headline-lg": ["20px", { "lineHeight": "24px", "fontWeight": "600" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "fontWeight": "500" }],
+                        "kpi-value-mobile": ["28px", { "lineHeight": "28px", "fontWeight": "700" }],
+                        "headline-md": ["18px", { "lineHeight": "22px", "fontWeight": "600" }],
+                        "body-default": ["14px", { "lineHeight": "20px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+</head>
+<body class="bg-background text-on-surface antialiased font-body-default min-h-screen">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-full w-[260px] flex flex-col z-40 bg-surface-container-low border-r border-border-high-contrast hidden md:flex">
+<div class="p-gutter-default mb-4">
+<h1 class="text-headline-md font-headline-md font-bold text-primary">Vigilant Platform</h1>
+<p class="text-label-caps font-label-caps text-secondary mt-1">System Monitoring</p>
+</div>
+<ul class="flex-1 px-4 space-y-1 overflow-y-auto">
+<li>
+<a class="flex items-center px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-highest transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]" data-icon="dashboard">dashboard</span>
+<span class="text-body-medium font-body-medium">Dashboard</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-highest transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]" data-icon="hub">hub</span>
+<span class="text-body-medium font-body-medium">Topology</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-3 py-2 rounded-lg text-primary font-bold border-l-4 border-primary bg-surface-container-highest opacity-90 transition-opacity" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]" data-icon="videocam">videocam</span>
+<span class="text-body-medium font-body-medium">Assets</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-highest transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]" data-icon="warning">warning</span>
+<span class="text-body-medium font-body-medium">Incidents</span>
+</a>
+</li>
+<li>
+<a class="flex items-center px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-highest transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]" data-icon="analytics">analytics</span>
+<span class="text-body-medium font-body-medium">Analytics</span>
+</a>
+</li>
+</ul>
+<div class="p-4 border-t border-border-high-contrast space-y-1">
+<a class="flex items-center px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-highest transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]" data-icon="settings">settings</span>
+<span class="text-body-medium font-body-medium">Settings</span>
+</a>
+<a class="flex items-center px-3 py-2 rounded-lg text-secondary hover:bg-surface-container-highest transition-colors duration-200" href="#">
+<span class="material-symbols-outlined mr-3 text-[20px]" data-icon="help">help</span>
+<span class="text-body-medium font-body-medium">Support</span>
+</a>
+</div>
+</nav>
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 left-0 md:left-[260px] h-16 flex justify-between items-center px-gutter-default z-30 bg-surface border-b border-border-high-contrast shadow-sm">
+<div class="flex items-center">
+<span class="text-headline-md font-headline-md font-extrabold text-primary hidden md:block">System Health</span>
+<button class="md:hidden text-on-surface-variant p-2 mr-2">
+<span class="material-symbols-outlined" data-icon="menu">menu</span>
+</button>
+<div class="relative ml-0 md:ml-4 flex-1 md:w-64">
+<span class="material-symbols-outlined absolute left-3 top-1/2 transform -translate-y-1/2 text-on-surface-variant text-[18px]">search</span>
+<input class="w-full pl-9 pr-3 py-1.5 bg-surface-container-low border border-border-high-contrast rounded-lg text-body-default focus:ring-2 focus:ring-primary focus:ring-offset-0 focus:outline-none placeholder:text-secondary" placeholder="Search assets..." type="text"/>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined text-[24px]" data-icon="notifications">notifications</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined text-[24px]" data-icon="dns">dns</span>
+</button>
+<button class="p-2 text-on-surface-variant hover:bg-surface-container-low rounded-full transition-all focus:ring-2 focus:ring-primary focus:ring-offset-2">
+<span class="material-symbols-outlined text-[24px]" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-24 pb-8 px-margin-mobile md:px-margin-page md:ml-[260px] transition-all duration-300">
+<div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+<div>
+<h2 class="text-headline-lg font-headline-lg text-on-surface">Registered Assets</h2>
+<p class="text-body-default font-body-default text-secondary mt-1">Manage and monitor all connected surveillance devices and network switches.</p>
+</div>
+<div class="flex space-x-3 w-full md:w-auto">
+<button class="flex-1 md:flex-none px-4 py-2 bg-surface-container-low border border-border-high-contrast text-on-surface rounded-lg text-body-medium font-body-medium hover:bg-surface-container-high transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">filter_list</span> Filter
+                </button>
+<button class="flex-1 md:flex-none px-4 py-2 bg-primary text-on-primary rounded-lg text-body-medium font-body-medium hover:bg-on-primary-fixed-variant transition-colors flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-[18px]">add</span> Add Asset
+                </button>
+</div>
+</div>
+<!-- Metric Summary Cards -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+<div class="bg-surface border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] transition-transform">
+<div class="flex items-center justify-between mb-4">
+<span class="text-label-caps font-label-caps text-secondary">TOTAL ASSETS</span>
+<div class="w-10 h-10 rounded-lg bg-surface-container flex items-center justify-center text-primary">
+<span class="material-symbols-outlined">devices</span>
+</div>
+</div>
+<div class="text-kpi-value font-kpi-value text-on-surface">1,248</div>
+</div>
+<div class="bg-surface border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] transition-transform">
+<div class="flex items-center justify-between mb-4">
+<span class="text-label-caps font-label-caps text-secondary">ONLINE</span>
+<div class="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-status-green">
+<span class="material-symbols-outlined">check_circle</span>
+</div>
+</div>
+<div class="text-kpi-value font-kpi-value text-on-surface">1,192</div>
+</div>
+<div class="bg-surface border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] transition-transform">
+<div class="flex items-center justify-between mb-4">
+<span class="text-label-caps font-label-caps text-secondary">OFFLINE</span>
+<div class="w-10 h-10 rounded-lg bg-red-50 flex items-center justify-center text-status-red">
+<span class="material-symbols-outlined">error</span>
+</div>
+</div>
+<div class="text-kpi-value font-kpi-value text-on-surface">14</div>
+</div>
+<div class="bg-surface border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] transition-transform">
+<div class="flex items-center justify-between mb-4">
+<span class="text-label-caps font-label-caps text-secondary">MAINTENANCE</span>
+<div class="w-10 h-10 rounded-lg bg-amber-50 flex items-center justify-center text-status-amber">
+<span class="material-symbols-outlined">build</span>
+</div>
+</div>
+<div class="text-kpi-value font-kpi-value text-on-surface">42</div>
+</div>
+</div>
+<!-- Asset Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+<!-- Card 1: Online Camera -->
+<div class="bg-surface border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] hover:shadow-md transition-all relative overflow-hidden border-l-[3px] border-l-status-green flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center text-on-surface">
+<span class="material-symbols-outlined text-[20px]">videocam</span>
+</div>
+<div>
+<h3 class="text-body-medium font-body-medium font-semibold text-on-surface">CAM-EXT-N01</h3>
+<p class="text-label-sm font-label-sm text-secondary">North Perimeter Gate</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-green-50 text-status-green text-label-sm font-label-sm flex items-center gap-1 border border-green-100">
+<span class="w-1.5 h-1.5 rounded-full bg-status-green"></span> Online
+                    </span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4 mt-auto">
+<div>
+<p class="text-label-caps font-label-caps text-secondary mb-1">IP ADDRESS</p>
+<p class="text-body-default font-body-default text-on-surface">192.168.1.105</p>
+</div>
+<div>
+<p class="text-label-caps font-label-caps text-secondary mb-1">FIRMWARE</p>
+<p class="text-body-default font-body-default text-on-surface">v2.4.1 (Up to date)</p>
+</div>
+</div>
+<div class="bg-bg-subtle rounded-lg p-3 grid grid-cols-2 gap-4 mb-4">
+<div>
+<span class="text-label-sm font-label-sm text-secondary block mb-1">Latency</span>
+<span class="text-body-medium font-body-medium text-on-surface">12ms</span>
+</div>
+<div>
+<span class="text-label-sm font-label-sm text-secondary block mb-1">Packet Loss</span>
+<span class="text-body-medium font-body-medium text-on-surface">0%</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-2 border-t border-border-high-contrast pt-4">
+<button class="p-2 text-secondary hover:text-primary hover:bg-surface-container-low rounded transition-colors" title="Ping Test">
+<span class="material-symbols-outlined text-[18px]">network_ping</span>
+</button>
+<button class="p-2 text-secondary hover:text-status-amber hover:bg-amber-50 rounded transition-colors" title="Maintenance Mode">
+<span class="material-symbols-outlined text-[18px]">build</span>
+</button>
+<button class="px-3 py-1.5 border border-border-high-contrast rounded text-body-medium font-body-medium text-on-surface hover:bg-surface-container-low transition-colors">
+                        Details
+                    </button>
+</div>
+</div>
+<!-- Card 2: Offline Camera -->
+<div class="bg-surface border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] hover:shadow-md transition-all relative overflow-hidden border-l-[3px] border-l-status-red flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-red-50 flex items-center justify-center text-status-red">
+<span class="material-symbols-outlined text-[20px]">videocam_off</span>
+</div>
+<div>
+<h3 class="text-body-medium font-body-medium font-semibold text-on-surface">CAM-INT-W04</h3>
+<p class="text-label-sm font-label-sm text-secondary">Warehouse West Aisle</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-red-50 text-status-red text-label-sm font-label-sm flex items-center gap-1 border border-red-100">
+<span class="w-1.5 h-1.5 rounded-full bg-status-red"></span> Offline
+                    </span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4 mt-auto">
+<div>
+<p class="text-label-caps font-label-caps text-secondary mb-1">IP ADDRESS</p>
+<p class="text-body-default font-body-default text-on-surface">192.168.2.44</p>
+</div>
+<div>
+<p class="text-label-caps font-label-caps text-secondary mb-1">LAST SEEN</p>
+<p class="text-body-default font-body-default text-status-red font-medium">14 mins ago</p>
+</div>
+</div>
+<div class="bg-red-50/50 rounded-lg p-3 border border-red-100 mb-4 flex items-start gap-2">
+<span class="material-symbols-outlined text-status-red text-[18px] mt-0.5">warning</span>
+<span class="text-body-medium font-body-medium text-status-red text-sm">Connection timeout during health check. Attempting reconnect.</span>
+</div>
+<div class="flex items-center justify-end gap-2 border-t border-border-high-contrast pt-4">
+<button class="p-2 text-secondary hover:text-primary hover:bg-surface-container-low rounded transition-colors" title="Ping Test">
+<span class="material-symbols-outlined text-[18px]">network_ping</span>
+</button>
+<button class="px-3 py-1.5 border border-border-high-contrast rounded text-body-medium font-body-medium text-on-surface hover:bg-surface-container-low transition-colors">
+                        Investigate
+                    </button>
+</div>
+</div>
+<!-- Card 3: Unstable Switch -->
+<div class="bg-surface border border-border-high-contrast rounded-xl p-panel-padding shadow-[0_10px_24px_rgba(15,23,42,0.06)] hover:-translate-y-[1px] hover:shadow-md transition-all relative overflow-hidden border-l-[3px] border-l-status-amber flex flex-col h-full">
+<div class="flex justify-between items-start mb-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-status-amber">
+<span class="material-symbols-outlined text-[20px]">router</span>
+</div>
+<div>
+<h3 class="text-body-medium font-body-medium font-semibold text-on-surface">SW-CORE-02</h3>
+<p class="text-label-sm font-label-sm text-secondary">Server Room Rack B</p>
+</div>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-amber-50 text-status-amber text-label-sm font-label-sm flex items-center gap-1 border border-amber-100">
+<span class="w-1.5 h-1.5 rounded-full bg-status-amber"></span> Unstable
+                    </span>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-4 mt-auto">
+<div>
+<p class="text-label-caps font-label-caps text-secondary mb-1">IP ADDRESS</p>
+<p class="text-body-default font-body-default text-on-surface">10.0.0.2</p>
+</div>
+<div>
+<p class="text-label-caps font-label-caps text-secondary mb-1">UPTIME</p>
+<p class="text-body-default font-body-default text-on-surface">45d 12h</p>
+</div>
+</div>
+<div class="bg-bg-subtle rounded-lg p-3 grid grid-cols-2 gap-4 mb-4 border border-amber-100">
+<div>
+<span class="text-label-sm font-label-sm text-secondary block mb-1">Latency</span>
+<span class="text-body-medium font-body-medium text-status-amber font-medium">145ms</span>
+</div>
+<div>
+<span class="text-label-sm font-label-sm text-secondary block mb-1">Packet Loss</span>
+<span class="text-body-medium font-body-medium text-status-amber font-medium">4.2%</span>
+</div>
+</div>
+<div class="flex items-center justify-end gap-2 border-t border-border-high-contrast pt-4">
+<button class="p-2 text-secondary hover:text-primary hover:bg-surface-container-low rounded transition-colors" title="Ping Test">
+<span class="material-symbols-outlined text-[18px]">network_ping</span>
+</button>
+<button class="p-2 text-secondary hover:text-status-amber hover:bg-amber-50 rounded transition-colors" title="Maintenance Mode">
+<span class="material-symbols-outlined text-[18px]">build</span>
+</button>
+<button class="px-3 py-1.5 border border-border-high-contrast rounded text-body-medium font-body-medium text-on-surface hover:bg-surface-container-low transition-colors">
+                        Details
+                    </button>
+</div>
+</div>
+</div>
+</main>
+</body></html>
