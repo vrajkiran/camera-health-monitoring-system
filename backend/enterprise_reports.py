@@ -1,6 +1,7 @@
 """Executive daily and monthly report generation."""
 
 import csv
+import html
 import io
 import json
 from datetime import datetime, timedelta
@@ -49,11 +50,11 @@ class ReportService:
         analytics = RootCauseAnalyticsService().summary({"date_from": period_start.date().isoformat(), "date_to": generated.date().isoformat()})
         ai_perf = AIFeedbackService().performance()
         critical = [i for i in stats["incidents"] if i.get("status") in ("NEW", "NOTIFIED", "ACKNOWLEDGED", "IN_PROGRESS")][:10]
-        rows = "".join(f"<tr><td>{i['camera_name']}</td><td>{i.get('diagnosis')}</td><td>{i.get('downtime') or 'Open'}</td><td>{i.get('status')}</td><td>{i.get('severity')}</td></tr>" for i in critical)
-        maintenance_rows = "".join(f"<tr><td>{m['camera_name']}</td><td>{m['technician_name']}</td><td>{m['maintenance_reason']}</td><td>{m.get('expected_end_time') or '-'}</td></tr>" for m in stats["maintenance"])
-        cause_rows = "".join(f"<tr><td>{cause}</td><td>{count}</td></tr>" for cause, count in analytics["top_failure_causes"])
+        rows = "".join(f"<tr><td>{html.escape(str(i['camera_name']))}</td><td>{html.escape(str(i.get('diagnosis') or ''))}</td><td>{html.escape(str(i.get('downtime') or 'Open'))}</td><td>{html.escape(str(i.get('status') or ''))}</td><td>{html.escape(str(i.get('severity') or ''))}</td></tr>" for i in critical)
+        maintenance_rows = "".join(f"<tr><td>{html.escape(str(m['camera_name']))}</td><td>{html.escape(str(m['technician_name']))}</td><td>{html.escape(str(m['maintenance_reason']))}</td><td>{html.escape(str(m.get('expected_end_time') or '-'))}</td></tr>" for m in stats["maintenance"])
+        cause_rows = "".join(f"<tr><td>{html.escape(str(cause))}</td><td>{html.escape(str(count))}</td></tr>" for cause, count in analytics["top_failure_causes"])
         recs = self.recommendations(analytics)
-        rec_html = "".join(f"<li>{item}</li>" for item in recs)
+        rec_html = "".join(f"<li>{html.escape(str(item))}</li>" for item in recs)
         cards = "".join(f"<div class='card'><span>{label}</span><strong>{value}</strong></div>" for label, value in [
             ("Total Cameras", stats["total_cameras"]), ("Healthy", stats["healthy_cameras"]), ("Offline", stats["offline_cameras"]),
             ("Critical", stats["critical_cameras"]), ("Warning", stats["warning_cameras"]), ("Maintenance", stats["maintenance_cameras"]),

@@ -9,7 +9,7 @@ This application is focused on camera health monitoring and operational decision
 1. Open the project folder:
 
 ```powershell
-cd "C:\Users\Intel\OneDrive\문서\Projects\camera-health-monitoring-system"
+cd "C:\Users\Intel\OneDrive\문서\Projects\cc-camera-frontend-only"
 ```
 
 2. Start the backend and frontend together:
@@ -32,6 +32,8 @@ Password: Admin@1234
 ```
 
 Change the default password before using the system in a real environment.
+
+For any non-demo run, set `DEMO_MODE=false` and a unique `JWT_SECRET` in `.env`. The process refuses to start if the JWT secret is still the default and demo mode is off.
 
 ## What Runs on Port 8000
 
@@ -68,7 +70,9 @@ This means `http://127.0.0.1:8000` is the main application URL.
 - Central recommendation engine
 - ML statistics, prediction focus, diagnosis highlights, and recommendation visibility
 - Automatic notification history
-- CSV reports`r`n- Keyboard navigation with global back, Ctrl+K search, and camera-card arrow navigation`r`n- Preferences with Auto Refresh, Dark Mode, Compact View, and Default Landing Page
+- CSV reports
+- Keyboard navigation with global back, Ctrl+K search, and camera-card arrow navigation
+- Preferences with Auto Refresh, Dark Mode, Compact View, and Default Landing Page
 - Role-based authentication
 - Secret-safe settings API
 

@@ -315,17 +315,12 @@ class TelegramIncidentService:
         return send_telegram_message("\n".join(lines))
 
     def _camera_for_incident(self, incident, db=None):
-        close_db = False
-        if db is None:
-            db_ctx = connect()
-            db = db_ctx.__enter__()
-            close_db = True
-        try:
+        if db is not None:
             row = db.execute("SELECT * FROM cameras WHERE id = ?", (incident["camera_id"],)).fetchone()
             return row_to_dict(row) if row else None
-        finally:
-            if close_db:
-                db_ctx.__exit__(None, None, None)
+        with connect() as conn:
+            row = conn.execute("SELECT * FROM cameras WHERE id = ?", (incident["camera_id"],)).fetchone()
+            return row_to_dict(row) if row else None
 
     def _latest_ping(self, db, camera_id):
         row = db.execute("SELECT * FROM ping_history WHERE camera_id = ? ORDER BY recorded_at DESC LIMIT 1", (camera_id,)).fetchone()

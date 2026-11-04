@@ -4,7 +4,9 @@ import base64
 import hashlib
 import socket
 import threading
+from urllib.parse import parse_qs, urlparse
 
+from auth import decode_token
 from websocket.connection_manager import manager
 
 GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
@@ -12,13 +14,29 @@ GUID = "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
 
 def _handshake(conn):
     request = conn.recv(4096).decode("utf-8", errors="ignore")
+    if not request:
+        return False
+    lines = request.split("\r\n")
+    request_line = lines[0] if lines else ""
+    parts = request_line.split(" ")
+    target = parts[1] if len(parts) > 1 else "/"
     headers = {}
-    for line in request.split("\r\n")[1:]:
+    for line in lines[1:]:
         if ":" in line:
             key, value = line.split(":", 1)
             headers[key.strip().lower()] = value.strip()
     ws_key = headers.get("sec-websocket-key")
     if not ws_key:
+        return False
+    query = parse_qs(urlparse(target).query)
+    token = (query.get("token") or [""])[0].strip()
+    if not token:
+        conn.sendall(b"HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n")
+        return False
+    try:
+        decode_token(token)
+    except ValueError:
+        conn.sendall(b"HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n")
         return False
     accept = base64.b64encode(hashlib.sha1((ws_key + GUID).encode("utf-8")).digest()).decode("ascii")
     response = (
@@ -64,7 +82,6 @@ def _handle_client(conn):
             conn.close()
             return
         manager.add(conn)
-        manager.broadcast("CAMERA_ONLINE", {"name": "WebSocket connected", "status": "ONLINE"})
         while True:
             if _read_frame(conn) is None:
                 break

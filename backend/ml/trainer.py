@@ -1,13 +1,18 @@
-﻿"""Model training and persistence for predictive camera failure analysis.
+"""Model training and persistence for predictive camera failure analysis.
 
 The preferred backend is scikit-learn RandomForestClassifier and IsolationForest. If the local
 Windows policy blocks SciPy native DLL loading, this module falls back to small pickleable models
 that preserve the same predict_proba and decision_function contract so the application remains live.
 """
 
+import hashlib
+import hmac
+import logging
 import math
 import pickle
 from pathlib import Path
+
+from config import JWT_SECRET
 
 try:
     from sklearn.ensemble import IsolationForest, RandomForestClassifier
@@ -112,33 +117,54 @@ def train_models(feature_matrix):
     return {"random_forest": rf, "isolation_forest": iso, "feature_names": names, "backend": "sklearn" if SKLEARN_AVAILABLE else "fallback"}
 
 
+def _compute_model_sig(rf_bytes, iso_bytes, meta_bytes):
+    key = (JWT_SECRET or "cctv-ml-signing-key").encode("utf-8")
+    h = hmac.new(key, digestmod=hashlib.sha256)
+    h.update(rf_bytes)
+    h.update(iso_bytes)
+    h.update(meta_bytes)
+    return h.hexdigest()
+
+
 def save_models(models, path=None):
-    """Persist trained models with pickle."""
+    """Persist trained models with HMAC signature verification."""
     if not models:
         return False
     directory = Path(path) if path else MODEL_DIR
     directory.mkdir(parents=True, exist_ok=True)
+    rf_bytes = pickle.dumps(models["random_forest"])
+    iso_bytes = pickle.dumps(models["isolation_forest"])
+    meta_bytes = pickle.dumps({"feature_names": models["feature_names"], "backend": models.get("backend", "unknown")})
+    sig = _compute_model_sig(rf_bytes, iso_bytes, meta_bytes)
     with open(directory / RF_PATH.name, "wb") as handle:
-        pickle.dump(models["random_forest"], handle)
+        handle.write(rf_bytes)
     with open(directory / IF_PATH.name, "wb") as handle:
-        pickle.dump(models["isolation_forest"], handle)
+        handle.write(iso_bytes)
     with open(directory / META_PATH.name, "wb") as handle:
-        pickle.dump({"feature_names": models["feature_names"], "backend": models.get("backend", "unknown")}, handle)
+        handle.write(meta_bytes)
+    with open(directory / "models.sig", "w", encoding="utf-8") as handle:
+        handle.write(sig)
     return True
 
 
 def load_models(path=None):
-    """Load persisted models, returning None when models are not available yet."""
+    """Load persisted models after verifying HMAC signature integrity."""
     directory = Path(path) if path else MODEL_DIR
     rf_path = directory / RF_PATH.name
     if_path = directory / IF_PATH.name
     meta_path = directory / META_PATH.name
-    if not rf_path.exists() or not if_path.exists() or not meta_path.exists():
+    sig_path = directory / "models.sig"
+    if not rf_path.exists() or not if_path.exists() or not meta_path.exists() or not sig_path.exists():
         return None
-    with open(rf_path, "rb") as handle:
-        rf = pickle.load(handle)
-    with open(if_path, "rb") as handle:
-        iso = pickle.load(handle)
-    with open(meta_path, "rb") as handle:
-        meta = pickle.load(handle)
+    rf_bytes = rf_path.read_bytes()
+    iso_bytes = if_path.read_bytes()
+    meta_bytes = meta_path.read_bytes()
+    expected_sig = _compute_model_sig(rf_bytes, iso_bytes, meta_bytes)
+    actual_sig = sig_path.read_text(encoding="utf-8").strip()
+    if not hmac.compare_digest(actual_sig, expected_sig):
+        logging.error("ML model HMAC signature mismatch! Rejecting untrusted model pickle.")
+        return None
+    rf = pickle.loads(rf_bytes)
+    iso = pickle.loads(iso_bytes)
+    meta = pickle.loads(meta_bytes)
     return {"random_forest": rf, "isolation_forest": iso, "feature_names": meta.get("feature_names", feature_names()), "backend": meta.get("backend", "unknown")}

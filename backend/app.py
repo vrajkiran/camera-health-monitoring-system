@@ -1,4 +1,5 @@
 ﻿import json
+import logging
 import platform
 import sys
 import threading
@@ -9,11 +10,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlparse
 
 from alerts import email_configured, send_email_report, send_telegram_message, telegram_configured
-from config import BASE_DIR
+from config import ALLOWED_ORIGINS, BASE_DIR, DEMO_MODE, validate_runtime_secrets
 from database import backup_database, connect, init_db, row_to_dict
 from diagnosis_engine import diagnose_camera, recommendation_text, RECOMMENDATIONS
-from monitoring.health_classifier import classify_health
 from monitoring.monitor_scheduler import MonitorScheduler
+from monitoring.probe import probe_camera
 from ml.model_scheduler import ModelTrainingScheduler
 from ml.risk_engine import ensure_models, latest_predictions, run_all_predictions
 from topology import get_topology_data
@@ -31,8 +32,6 @@ ALERT_ENGINE_DIR = Path(__file__).resolve().parent / "alerts"
 if str(ALERT_ENGINE_DIR) not in sys.path:
     sys.path.insert(0, str(ALERT_ENGINE_DIR))
 from alert_scheduler import AlertScheduler
-from monitoring.ping_monitor import run_ping
-from monitoring.rtsp_monitor import check_rtsp
 from websocket.event_dispatcher import dispatch
 from websocket.websocket_server import start_websocket_server
 
@@ -49,17 +48,26 @@ ALERT_SCHEDULER = AlertScheduler()
 MODEL_SCHEDULER = ModelTrainingScheduler()
 
 
+def _apply_cors_headers(handler):
+    origin = handler.headers.get("Origin", "")
+    if origin in ALLOWED_ORIGINS:
+        handler.send_header("Access-Control-Allow-Origin", origin)
+        handler.send_header("Vary", "Origin")
+    elif not origin and ALLOWED_ORIGINS:
+        handler.send_header("Access-Control-Allow-Origin", ALLOWED_ORIGINS[0])
+    handler.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
+    handler.send_header("Access-Control-Allow-Headers", "Content-Type, Authorization")
+    handler.send_header("Access-Control-Allow-Credentials", "true")
+
+
 def json_response(handler, payload, status=200):
     body = json.dumps(payload, ensure_ascii=False).encode("utf-8")
     handler.send_response(status)
     handler.send_header("Content-Type", "application/json; charset=utf-8")
     handler.send_header("Content-Length", str(len(body)))
-    handler.send_header("Access-Control-Allow-Origin", "*")
-    handler.send_header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
-    handler.send_header("Access-Control-Allow-Headers", "Content-Type")
+    _apply_cors_headers(handler)
     handler.end_headers()
     handler.wfile.write(body)
-
 
 
 def file_response(handler, body, content_type, filename):
@@ -69,9 +77,9 @@ def file_response(handler, body, content_type, filename):
         data = body
     handler.send_response(200)
     handler.send_header("Content-Type", content_type)
-    handler.send_header("Content-Disposition", f"attachment; filename=\"{filename}\"")
+    handler.send_header("Content-Disposition", f'attachment; filename="{filename}"')
     handler.send_header("Content-Length", str(len(data)))
-    handler.send_header("Access-Control-Allow-Origin", "*")
+    _apply_cors_headers(handler)
     handler.end_headers()
     handler.wfile.write(data)
 
@@ -81,17 +89,78 @@ def report_response(handler, path, query):
     period_days, name = periods[path]
     file_response(handler, generate_csv_report(period_days), "text/csv; charset=utf-8", f"{name}.csv")
 
-def read_body(handler):
-    length = int(handler.headers.get("Content-Length", "0") or 0)
+
+def read_body(handler, max_bytes=1_000_000):
+    try:
+        length = int(handler.headers.get("Content-Length", "0") or 0)
+    except (TypeError, ValueError):
+        raise ValueError("Invalid Content-Length header")
+    if length > max_bytes:
+        raise ValueError("Request body exceeds maximum allowed size (1MB)")
     if not length:
         return {}
-    return json.loads(handler.rfile.read(length).decode("utf-8"))
+    raw_data = handler.rfile.read(length)
+    try:
+        return json.loads(raw_data.decode("utf-8"))
+    except (UnicodeDecodeError, json.JSONDecodeError) as exc:
+        raise ValueError("Request body must be valid JSON") from exc
 
 
-def check_camera_health(ip_address, rtsp_url=""):
-    ping_result = run_ping(ip_address)
-    rtsp_result = check_rtsp(rtsp_url)
-    return classify_health(ping_result, rtsp_result, rtsp_url)
+RTSP_VISIBLE_ROLES = {"ADMINISTRATOR", "NETWORK_ENGINEER"}
+PUBLIC_GET_PATHS = {"/api/health"}
+PUBLIC_POST_PATHS = {"/api/auth/login", "/api/auth/logout"}
+BLOCKED_STATIC_SUFFIXES = {".db", ".env", ".py", ".pyc", ".pem", ".key", ".ini"}
+
+
+def check_camera_health(camera):
+    return probe_camera(camera)
+
+
+def normalize_probe_mode(value, fallback=""):
+    raw = str(value if value is not None else fallback or "").strip().upper()
+    if raw in ("", "LIVE", "SIMULATED"):
+        return raw
+    raise ValueError("probe_mode must be LIVE, SIMULATED, or empty")
+
+
+def can_see_rtsp(user):
+    return bool(user) and user.get("role") in RTSP_VISIBLE_ROLES
+
+
+def sanitize_camera(camera, user):
+    if not camera:
+        return camera
+    data = dict(camera)
+    if not can_see_rtsp(user):
+        data["rtsp_url"] = ""
+    return data
+
+
+def sanitize_cameras(cameras, user):
+    return [sanitize_camera(camera, user) for camera in cameras]
+
+
+def sanitize_switch(switch, user):
+    if not switch:
+        return switch
+    data = dict(switch)
+    if data.get("cameras"):
+        data["cameras"] = sanitize_cameras(data["cameras"], user)
+    return data
+
+
+def monitor_runtime():
+    return SCHEDULER.runtime_status()
+
+
+def api_user(handler, path, method):
+    if method == "GET" and path in PUBLIC_GET_PATHS:
+        return {"role": None, "public": True}
+    if method == "POST" and path in PUBLIC_POST_PATHS:
+        return {"role": None, "public": True}
+    if not path.startswith("/api/"):
+        return None
+    return require_auth(handler)
 
 
 def get_cameras():
@@ -207,19 +276,26 @@ def create_camera(body):
     missing = [field for field in required if not body.get(field)]
     if missing:
         raise ValueError(f"Missing fields: {', '.join(missing)}")
+    probe_mode = normalize_probe_mode(body.get("probe_mode"), "")
     now = datetime.now().isoformat(timespec="seconds")
-    health = check_camera_health(body["ip_address"], body["rtsp_url"])
+    health = check_camera_health({
+        "ip_address": body["ip_address"],
+        "rtsp_url": body["rtsp_url"],
+        "probe_mode": probe_mode,
+        "status": None,
+        "id": 0,
+    })
     with connect() as db:
         cursor = db.execute(
             """
             INSERT INTO cameras
-            (name, location, ip_address, switch_id, switch_ip, rtsp_url, status, last_checked,
+            (name, location, ip_address, switch_id, switch_ip, rtsp_url, probe_mode, status, last_checked,
              latency_ms, stream_status, stream_response_ms, last_stream_check)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 body["name"], body["location"], body["ip_address"], body["switch_id"], body["switch_ip"],
-                body["rtsp_url"], health["status"], now, health["latency_ms"], health["stream_status"],
+                body["rtsp_url"], probe_mode, health["status"], now, health["latency_ms"], health["stream_status"],
                 health["stream_response_ms"], now,
             ),
         )
@@ -255,20 +331,27 @@ def update_camera(camera_id, body):
         "switch_id": body.get("switch_id", current["switch_id"]),
         "switch_ip": body.get("switch_ip", current.get("switch_ip", "")),
         "rtsp_url": body.get("rtsp_url", current["rtsp_url"]),
+        "probe_mode": normalize_probe_mode(body.get("probe_mode"), current.get("probe_mode") or ""),
     }
     now = datetime.now().isoformat(timespec="seconds")
-    health = check_camera_health(fields["ip_address"], fields["rtsp_url"])
+    health = check_camera_health({
+        "id": camera_id,
+        "ip_address": fields["ip_address"],
+        "rtsp_url": fields["rtsp_url"],
+        "probe_mode": fields["probe_mode"],
+        "status": current.get("status"),
+    })
     with connect() as db:
         db.execute(
             """
             UPDATE cameras
-            SET name = ?, location = ?, ip_address = ?, switch_id = ?, switch_ip = ?, rtsp_url = ?,
+            SET name = ?, location = ?, ip_address = ?, switch_id = ?, switch_ip = ?, rtsp_url = ?, probe_mode = ?,
                 status = ?, last_checked = ?, latency_ms = ?, stream_status = ?, stream_response_ms = ?, last_stream_check = ?
             WHERE id = ?
             """,
             (
                 fields["name"], fields["location"], fields["ip_address"], fields["switch_id"], fields["switch_ip"],
-                fields["rtsp_url"], health["status"], now, health["latency_ms"], health["stream_status"],
+                fields["rtsp_url"], fields["probe_mode"], health["status"], now, health["latency_ms"], health["stream_status"],
                 health["stream_response_ms"], now, camera_id,
             ),
         )
@@ -386,7 +469,7 @@ def unresolved_cameras_today():
             ORDER BY switch_id, location, name
             """
         ).fetchall()
-    return [row_to_dict(row) for row in rows if (row_to_dict(row).get("last_checked") or "")[:10] <= today]
+    return [d for d in (row_to_dict(row) for row in rows) if (d.get("last_checked") or "")[:10] <= today]
 
 
 def build_daily_email_body(cameras):
@@ -611,27 +694,49 @@ def get_diagnosis_summary():
 
 def get_recommendations():
     return {key: recommendation_text(key) for key in RECOMMENDATIONS}
+
+
 def get_platform_status():
     stats = get_stats()
+    runtime = monitor_runtime()
+    monitoring = "Active" if runtime.get("alive") else ("Starting" if runtime.get("started") and not runtime.get("last_success_at") else "Degraded")
     return {
-        "platform_status": "Monitoring Active",
-        "camera_monitoring": "Active",
+        "platform_status": "Monitoring Active" if runtime.get("alive") else "Monitoring Attention Required",
+        "camera_monitoring": monitoring,
         "notification_service": "Configured" if (email_configured() or telegram_configured()) else "Pending Configuration",
-        "last_synchronization": datetime.now().isoformat(timespec="seconds"),
+        "last_synchronization": runtime.get("last_success_at"),
+        "last_monitor_tick": runtime.get("last_success_at"),
+        "monitor_error": runtime.get("last_error"),
+        "demo_mode": DEMO_MODE,
         "system_health": "Healthy" if stats["offline"] == 0 and stats["unstable"] == 0 and stats.get("stream_failure", 0) == 0 else "Attention Required",
     }
 
 
 def get_monitoring_status():
     stats = get_stats()
+    runtime = monitor_runtime()
     return {
-        "camera_monitoring": "Active",
+        "camera_monitoring": "Active" if runtime.get("alive") else "Degraded",
         "total_cameras": stats["total"],
         "healthy_cameras": stats["online"],
         "warning_cameras": stats["unstable"] + stats.get("stream_failure", 0),
         "offline_cameras": stats["offline"],
         "switches": stats.get("switches", {}),
-        "last_synchronization": datetime.now().isoformat(timespec="seconds"),
+        "last_synchronization": runtime.get("last_success_at"),
+        "last_monitor_tick": runtime.get("last_success_at"),
+        "monitor_error": runtime.get("last_error"),
+    }
+
+
+def get_public_health():
+    runtime = monitor_runtime()
+    return {
+        "ok": True,
+        "database": "sqlite",
+        "sms_enabled": False,
+        "websocket_port": 8001,
+        "demo_mode": DEMO_MODE,
+        "monitor": runtime,
     }
 
 
@@ -795,7 +900,7 @@ def backup_loop():
         try:
             backup_database()
         except Exception:
-            pass
+            logging.exception("Database backup failed")
         time.sleep(86400)
 
 
@@ -807,142 +912,184 @@ class Handler(BaseHTTPRequestHandler):
         return
 
     def do_OPTIONS(self):
-        json_response(self, {"ok": True})
+        self.send_response(204)
+        _apply_cors_headers(self)
+        self.send_header("Access-Control-Max-Age", "86400")
+        self.end_headers()
 
     def do_GET(self):
-        parsed = urlparse(self.path)
-        path = parsed.path
-        if path in ("/api/reports/daily", "/api/reports/weekly", "/api/reports/monthly"):
-            report_response(self, path, parsed.query)
-        elif path == "/api/health":
-            json_response(self, {"ok": True, "database": "sqlite", "sms_enabled": False, "websocket_port": 8001})
-        elif path == "/api/config/status":
-            json_response(self, {"email_configured": email_configured(), "telegram_configured": telegram_configured(), "sms_enabled": False})
-        elif path == "/api/auth/me":
-            user_payload = require_auth(self)
-            if not user_payload:
+        try:
+            parsed = urlparse(self.path)
+            path = parsed.path
+            user = api_user(self, path, "GET")
+            if path.startswith("/api/") and user is None:
                 return
-            user = get_current_user(user_payload)
-            json_response(self, {"ok": True, "user": user} if user else {"error": "User not found"}, 200 if user else 404)
-        elif path == "/api/users":
-            if not require_auth(self, ["ADMINISTRATOR"]):
-                return
-            json_response(self, list_users())
-        elif path == "/api/cameras":
-            json_response(self, get_cameras())
-        elif path == "/api/cameras/stats":
-            json_response(self, get_stats())
-        elif path == "/api/cameras/health-summary":
-            cameras = get_cameras()
-            total = len(cameras)
-            healthy = sum(1 for c in cameras if c["status"] == "ONLINE")
-            warning = sum(1 for c in cameras if c["status"] == "UNSTABLE")
-            offline = sum(1 for c in cameras if c["status"] == "OFFLINE")
-            stream_fail = sum(1 for c in cameras if c["status"] == "STREAM_FAILURE")
-            health_pct = round((healthy / total * 100), 1) if total else 0
-            json_response(self, {
-                "total": total,
-                "healthy": healthy,
-                "warning": warning,
-                "offline": offline,
-                "stream_failure": stream_fail,
-                "health_percentage": health_pct,
-                "status": "healthy" if health_pct >= 80 else "warning" if health_pct >= 50 else "critical"
-            })
-        elif path == "/api/cameras/latency-stats":
-            cameras = get_cameras()
-            latencies = [c["latency_ms"] for c in cameras if c.get("latency_ms") is not None]
-            avg_latency = round(sum(latencies) / len(latencies), 1) if latencies else None
-            max_latency = max(latencies) if latencies else None
-            min_latency = min(latencies) if latencies else None
-            json_response(self, {
-                "avg_latency_ms": avg_latency,
-                "max_latency_ms": max_latency,
-                "min_latency_ms": min_latency,
-                "cameras_with_data": len(latencies),
-                "cameras_no_response": len(cameras) - len(latencies)
-            })
-        elif path == "/api/platform/status":
-            json_response(self, get_platform_status())
-        elif path == "/api/monitoring/status":
-            json_response(self, get_monitoring_status())
-        elif path == "/api/notifications/history":
-            json_response(self, get_notification_history())
-        elif path == "/api/ml/statistics":
-            json_response(self, get_ml_statistics())
-        elif path == "/api/diagnosis/history":
-            json_response(self, get_diagnosis_history())
-        elif path == "/api/recommendations":
-            json_response(self, get_recommendations())
-        elif path == "/api/dashboard/summary":
-            json_response(self, get_dashboard_summary())
-        elif path == "/api/topology":
-            json_response(self, get_topology_data())
-        elif path == "/api/analytics/summary":
-            json_response(self, get_camera_analytics())
-        elif path == "/api/analytics/downtime-trend":
-            json_response(self, get_downtime_trend())
-        elif path == "/api/analytics/system":
-            json_response(self, get_system_summary())
-        elif path == "/api/predictions":
-            json_response(self, latest_predictions())
-        elif path == "/api/cameras/stream-status":
-            json_response(self, get_stream_status())
-        elif path.startswith("/api/predictions/"):
-            json_response(self, get_prediction_history(int(path.split("/")[-1])))
-        elif path == "/api/escalations":
-            json_response(self, get_escalations())
-        elif path == "/api/switches/stats":
-            json_response(self, switch_stats())
-        elif path == "/api/switches":
-            json_response(self, SwitchService().list_switches())
-        elif path.startswith("/api/switches/"):
-            switch_id = path.split("/")[-1]
-            switch = SwitchService().get_switch(switch_id)
-            json_response(self, switch if switch else {"error": "Switch not found"}, 200 if switch else 404)
-        elif path == "/api/settings":
-            json_response(self, get_settings())
-        elif path == "/api/user-activity":
-            json_response(self, get_user_activity())
-        elif path == "/api/maintenance/summary":
-            json_response(self, MaintenanceService().summary())
-        elif path == "/api/maintenance/sessions":
-            query = parse_qs(parsed.query)
-            status = (query.get("status") or [None])[0]
-            json_response(self, MaintenanceService().list_sessions(status))
-        elif path == "/api/root-cause/analytics":
-            query = parse_qs(parsed.query)
-            filters = {key: values[0] for key, values in query.items() if values}
-            json_response(self, RootCauseAnalyticsService().summary(filters))
-        elif path == "/api/ai-performance":
-            json_response(self, AIFeedbackService().performance())
-        elif path == "/api/ai-feedback":
-            json_response(self, AIFeedbackService().list_feedback())
-        elif path == "/api/enterprise-reports/daily":
-            json_response(self, ReportService().list_reports("daily"))
-        elif path == "/api/enterprise-reports/monthly":
-            json_response(self, ReportService().list_reports("monthly"))
-        elif path.startswith("/api/enterprise-reports/daily/"):
-            report = ReportService().get_report("daily", int(path.split("/")[-1]))
-            json_response(self, report if report else {"error": "Report not found"}, 200 if report else 404)
-        elif path.startswith("/api/enterprise-reports/monthly/"):
-            report = ReportService().get_report("monthly", int(path.split("/")[-1]))
-            json_response(self, report if report else {"error": "Report not found"}, 200 if report else 404)
-        elif path.startswith("/api/cameras/") and path.endswith("/ping-history"):
-            json_response(self, get_ping_history(int(path.split("/")[3])))
-        elif path.startswith("/api/cameras/"):
-            camera = get_camera(int(path.split("/")[-1]))
-            json_response(self, camera if camera else {"error": "Camera not found"}, 200 if camera else 404)
-        elif path == "/api/alerts":
-            json_response(self, get_alerts())
-        elif path == "/api/logs":
-            json_response(self, get_logs())
-        else:
-            self.serve_static(path)
-
+            if path in ("/api/reports/daily", "/api/reports/weekly", "/api/reports/monthly"):
+                if not user or user.get("role") not in ("ADMINISTRATOR", "NETWORK_ENGINEER", "OPERATOR"):
+                    json_response(self, {"error": "Permission denied"}, 403)
+                    return
+                report_response(self, path, parsed.query)
+            elif path == "/api/health":
+                json_response(self, get_public_health())
+            elif path == "/api/config/status":
+                json_response(self, {"email_configured": email_configured(), "telegram_configured": telegram_configured(), "sms_enabled": False})
+            elif path == "/api/auth/me":
+                current = get_current_user(user)
+                json_response(self, {"ok": True, "user": current} if current else {"error": "User not found"}, 200 if current else 404)
+            elif path == "/api/users":
+                if user.get("role") != "ADMINISTRATOR":
+                    json_response(self, {"error": "Permission denied"}, 403)
+                    return
+                json_response(self, list_users())
+            elif path == "/api/cameras":
+                json_response(self, sanitize_cameras(get_cameras(), user))
+            elif path == "/api/cameras/stats":
+                json_response(self, get_stats())
+            elif path == "/api/cameras/health-summary":
+                cameras = get_cameras()
+                total = len(cameras)
+                healthy = sum(1 for c in cameras if c["status"] == "ONLINE")
+                warning = sum(1 for c in cameras if c["status"] == "UNSTABLE")
+                offline = sum(1 for c in cameras if c["status"] == "OFFLINE")
+                stream_fail = sum(1 for c in cameras if c["status"] == "STREAM_FAILURE")
+                health_pct = round((healthy / total * 100), 1) if total else 0
+                json_response(self, {
+                    "total": total,
+                    "healthy": healthy,
+                    "warning": warning,
+                    "offline": offline,
+                    "stream_failure": stream_fail,
+                    "health_percentage": health_pct,
+                    "status": "healthy" if health_pct >= 80 else "warning" if health_pct >= 50 else "critical"
+                })
+            elif path == "/api/cameras/latency-stats":
+                cameras = get_cameras()
+                latencies = [c["latency_ms"] for c in cameras if c.get("latency_ms") is not None]
+                avg_latency = round(sum(latencies) / len(latencies), 1) if latencies else None
+                max_latency = max(latencies) if latencies else None
+                min_latency = min(latencies) if latencies else None
+                json_response(self, {
+                    "avg_latency_ms": avg_latency,
+                    "max_latency_ms": max_latency,
+                    "min_latency_ms": min_latency,
+                    "cameras_with_data": len(latencies),
+                    "cameras_no_response": len(cameras) - len(latencies)
+                })
+            elif path == "/api/platform/status":
+                json_response(self, get_platform_status())
+            elif path == "/api/monitoring/status":
+                json_response(self, get_monitoring_status())
+            elif path == "/api/notifications/history":
+                json_response(self, get_notification_history())
+            elif path == "/api/ml/statistics":
+                json_response(self, get_ml_statistics())
+            elif path == "/api/diagnosis/history":
+                json_response(self, get_diagnosis_history())
+            elif path == "/api/recommendations":
+                json_response(self, get_recommendations())
+            elif path == "/api/dashboard/summary":
+                json_response(self, get_dashboard_summary())
+            elif path == "/api/topology":
+                json_response(self, get_topology_data())
+            elif path == "/api/analytics/summary":
+                json_response(self, get_camera_analytics())
+            elif path == "/api/analytics/downtime-trend":
+                json_response(self, get_downtime_trend())
+            elif path == "/api/analytics/system":
+                json_response(self, get_system_summary())
+            elif path == "/api/predictions":
+                json_response(self, latest_predictions())
+            elif path == "/api/cameras/stream-status":
+                json_response(self, get_stream_status())
+            elif path.startswith("/api/predictions/"):
+                try:
+                    target_id = int(path.split("/")[-1])
+                except (ValueError, IndexError):
+                    json_response(self, {"error": "Invalid camera ID"}, 400)
+                    return
+                json_response(self, get_prediction_history(target_id))
+            elif path == "/api/escalations":
+                json_response(self, get_escalations())
+            elif path == "/api/switches/stats":
+                json_response(self, switch_stats())
+            elif path == "/api/switches":
+                json_response(self, [sanitize_switch(item, user) for item in SwitchService().list_switches()])
+            elif path.startswith("/api/switches/"):
+                switch_id = path.split("/")[-1]
+                switch = SwitchService().get_switch(switch_id)
+                json_response(self, sanitize_switch(switch, user) if switch else {"error": "Switch not found"}, 200 if switch else 404)
+            elif path == "/api/settings":
+                json_response(self, get_settings())
+            elif path == "/api/user-activity":
+                json_response(self, get_user_activity())
+            elif path == "/api/maintenance/summary":
+                json_response(self, MaintenanceService().summary())
+            elif path == "/api/maintenance/sessions":
+                query = parse_qs(parsed.query)
+                status = (query.get("status") or [None])[0]
+                json_response(self, MaintenanceService().list_sessions(status))
+            elif path == "/api/root-cause/analytics":
+                query = parse_qs(parsed.query)
+                filters = {key: values[0] for key, values in query.items() if values}
+                json_response(self, RootCauseAnalyticsService().summary(filters))
+            elif path == "/api/ai-performance":
+                json_response(self, AIFeedbackService().performance())
+            elif path == "/api/ai-feedback":
+                json_response(self, AIFeedbackService().list_feedback())
+            elif path == "/api/enterprise-reports/daily":
+                json_response(self, ReportService().list_reports("daily"))
+            elif path == "/api/enterprise-reports/monthly":
+                json_response(self, ReportService().list_reports("monthly"))
+            elif path.startswith("/api/enterprise-reports/daily/"):
+                try:
+                    report_id = int(path.split("/")[-1])
+                except (ValueError, IndexError):
+                    json_response(self, {"error": "Invalid report ID"}, 400)
+                    return
+                report = ReportService().get_report("daily", report_id)
+                json_response(self, report if report else {"error": "Report not found"}, 200 if report else 404)
+            elif path.startswith("/api/enterprise-reports/monthly/"):
+                try:
+                    report_id = int(path.split("/")[-1])
+                except (ValueError, IndexError):
+                    json_response(self, {"error": "Invalid report ID"}, 400)
+                    return
+                report = ReportService().get_report("monthly", report_id)
+                json_response(self, report if report else {"error": "Report not found"}, 200 if report else 404)
+            elif path.startswith("/api/cameras/") and path.endswith("/ping-history"):
+                try:
+                    camera_id = int(path.split("/")[3])
+                except (ValueError, IndexError):
+                    json_response(self, {"error": "Invalid camera ID"}, 400)
+                    return
+                json_response(self, get_ping_history(camera_id))
+            elif path.startswith("/api/cameras/"):
+                try:
+                    camera_id = int(path.split("/")[-1])
+                except (ValueError, IndexError):
+                    json_response(self, {"error": "Invalid camera ID"}, 400)
+                    return
+                camera = get_camera(camera_id)
+                json_response(self, sanitize_camera(camera, user) if camera else {"error": "Camera not found"}, 200 if camera else 404)
+            elif path == "/api/alerts":
+                json_response(self, get_alerts())
+            elif path == "/api/logs":
+                json_response(self, get_logs())
+            elif path.startswith("/api/"):
+                json_response(self, {"error": "Not found"}, 404)
+            else:
+                self.serve_static(path)
+        except ValueError as exc:
+            json_response(self, {"error": str(exc)}, 400)
+        except Exception as exc:
+            logging.exception("Unhandled error in do_GET: %s", exc)
+            json_response(self, {"error": "Internal server error"}, 500)
     def do_POST(self):
         path = urlparse(self.path).path
         try:
+            user = api_user(self, path, "POST")
+            if path.startswith("/api/") and user is None:
+                return
             if path == "/api/auth/login":
                 result = login_user(read_body(self))
                 json_response(self, result if result else {"error": "Invalid credentials"}, 200 if result else 401)
@@ -963,7 +1110,7 @@ class Handler(BaseHTTPRequestHandler):
             elif path == "/api/cameras":
                 if not require_auth(self, ["ADMINISTRATOR", "NETWORK_ENGINEER"]):
                     return
-                json_response(self, {"ok": True, "camera": create_camera(read_body(self))}, 201)
+                json_response(self, {"ok": True, "camera": sanitize_camera(create_camera(read_body(self)), user)}, 201)
             elif path.startswith("/api/cameras/") and path.endswith("/maintenance/start"):
                 if not require_auth(self, ["ADMINISTRATOR", "NETWORK_ENGINEER"]):
                     return
@@ -979,6 +1126,9 @@ class Handler(BaseHTTPRequestHandler):
                 session = MaintenanceService().complete(camera_id, body.get("notes", ""))
                 json_response(self, {"ok": True, "maintenance": session})
             elif path == "/api/ai-feedback":
+                if not user or user.get("public"):
+                    json_response(self, {"error": "Authorization token required"}, 401)
+                    return
                 body = read_body(self)
                 result = AIFeedbackService().submit(int(body.get("incident_id")), bool(body.get("diagnosis_correct")), body.get("operator") or "Dashboard operator", body.get("actual_cause"), body.get("resolution_notes", ""))
                 json_response(self, result, 201)
@@ -997,11 +1147,17 @@ class Handler(BaseHTTPRequestHandler):
                 session = MaintenanceService().complete_asset("SWITCH", switch_id, body.get("notes", ""), body.get("version"))
                 json_response(self, {"ok": True, "maintenance": session})
             elif path == "/api/root-cause/analytics/refresh":
+                if not require_auth(self, ["ADMINISTRATOR", "NETWORK_ENGINEER"]):
+                    return
                 json_response(self, RootCauseAnalyticsService().refresh_statistics())
             elif path == "/api/enterprise-reports/daily/generate":
+                if not require_auth(self, ["ADMINISTRATOR"]):
+                    return
                 body = read_body(self)
                 json_response(self, ReportService().generate_daily(send_email=bool(body.get("send_email"))))
             elif path == "/api/enterprise-reports/monthly/generate":
+                if not require_auth(self, ["ADMINISTRATOR"]):
+                    return
                 json_response(self, ReportService().generate_monthly())
             elif path in ("/api/alerts/daily-email-report", "/api/alerts/telegram-network-alert"):
                 json_response(self, {"error": "Manual notification triggers are disabled. Email and Telegram delivery are automatic."}, 404)
@@ -1013,6 +1169,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_PUT(self):
         path = urlparse(self.path).path
         try:
+            user = api_user(self, path, "PUT")
+            if path.startswith("/api/") and user is None:
+                return
             if path == "/api/settings":
                 if not require_auth(self, ["ADMINISTRATOR"]):
                     return
@@ -1026,9 +1185,15 @@ class Handler(BaseHTTPRequestHandler):
                 mark_alert_read(int(path.split("/")[3]))
                 json_response(self, {"ok": True})
             elif path.startswith("/api/incidents/") and path.endswith("/acknowledge"):
+                if not require_auth(self, ["ADMINISTRATOR", "NETWORK_ENGINEER", "OPERATOR"]):
+                    return
                 body = read_body(self)
-                incident_id = int(path.split("/")[3])
-                operator = body.get("acknowledged_by") or "Dashboard operator"
+                try:
+                    incident_id = int(path.split("/")[3])
+                except (ValueError, IndexError):
+                    json_response(self, {"error": "Invalid incident ID"}, 400)
+                    return
+                operator = body.get("acknowledged_by") or (user.get("username") if user else "Dashboard operator")
                 with connect() as db:
                     incident = IncidentService().repo.acknowledge(db, incident_id, operator, datetime.now().isoformat(timespec="seconds"))
                 json_response(self, {"ok": bool(incident), "incident": incident} if incident else {"error": "Incident not found"}, 200 if incident else 404)
@@ -1044,12 +1209,12 @@ class Handler(BaseHTTPRequestHandler):
                 camera_id = int(path.split("/")[3])
                 body = read_body(self)
                 update_camera_status(camera_id, body.get("status"))
-                json_response(self, {"ok": True, "camera": get_camera(camera_id)})
+                json_response(self, {"ok": True, "camera": sanitize_camera(get_camera(camera_id), user)})
             elif path.startswith("/api/cameras/"):
                 if not require_auth(self, ["ADMINISTRATOR", "NETWORK_ENGINEER"]):
                     return
                 camera_id = int(path.split("/")[-1])
-                json_response(self, {"ok": True, "camera": update_camera(camera_id, read_body(self))})
+                json_response(self, {"ok": True, "camera": sanitize_camera(update_camera(camera_id, read_body(self)), user)})
             else:
                 json_response(self, {"error": "Not found"}, 404)
         except Exception as exc:
@@ -1058,6 +1223,9 @@ class Handler(BaseHTTPRequestHandler):
     def do_DELETE(self):
         path = urlparse(self.path).path
         try:
+            user = api_user(self, path, "DELETE")
+            if path.startswith("/api/") and user is None:
+                return
             if path.startswith("/api/cameras/"):
                 if not require_auth(self, ["ADMINISTRATOR"]):
                     return
@@ -1069,11 +1237,41 @@ class Handler(BaseHTTPRequestHandler):
             json_response(self, {"error": str(exc)}, 400)
 
     def serve_static(self, path):
-        file_path = DIST_DIR / "index.html" if path == "/" else DIST_DIR / path.lstrip("/")
-        if not file_path.exists() or not file_path.is_file():
-            file_path = DIST_DIR / "index.html"
-        body = file_path.read_bytes()
-        content_type = "text/html; charset=utf-8" if file_path.suffix == ".html" else "application/octet-stream"
+        dist = DIST_DIR.resolve()
+        if path in ("", "/"):
+            candidate = dist / "index.html"
+        else:
+            candidate = (dist / path.lstrip("/")).resolve()
+        try:
+            candidate.relative_to(dist)
+        except ValueError:
+            self.send_error(403, "Forbidden")
+            return
+        if not candidate.is_file():
+            candidate = (dist / "index.html").resolve()
+            try:
+                candidate.relative_to(dist)
+            except ValueError:
+                self.send_error(403, "Forbidden")
+                return
+        if candidate.suffix.lower() in BLOCKED_STATIC_SUFFIXES:
+            self.send_error(403, "Forbidden")
+            return
+        body = candidate.read_bytes()
+        mime_map = {
+            ".html": "text/html; charset=utf-8",
+            ".css": "text/css; charset=utf-8",
+            ".js": "text/javascript; charset=utf-8",
+            ".json": "application/json; charset=utf-8",
+            ".svg": "image/svg+xml",
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".ico": "image/x-icon",
+            ".woff2": "font/woff2",
+            ".woff": "font/woff",
+        }
+        content_type = mime_map.get(candidate.suffix.lower(), "application/octet-stream")
         self.send_response(200)
         self.send_header("Content-Type", content_type)
         self.send_header("Content-Length", str(len(body)))
@@ -1084,6 +1282,8 @@ class Handler(BaseHTTPRequestHandler):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    validate_runtime_secrets()
     init_db()
     IncidentService().synchronize_current_failures()
     ensure_models()

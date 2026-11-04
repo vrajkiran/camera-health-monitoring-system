@@ -1,8 +1,12 @@
-﻿"""Classification rules that combine ICMP and RTSP camera health signals."""
+﻿"""Classification rules that combine ICMP and TCP RTSP-port signals."""
 
 
 def classify_health(ping_result, rtsp_result, rtsp_url):
-    """Return the normalized camera health state used by the dashboard and API."""
+    """Return the normalized camera health state used by the dashboard and API.
+
+    A successful RTSP check means the configured port accepted a TCP connection.
+    It does not mean the video stream is healthy.
+    """
     latency = ping_result.get("latency_ms")
     packet_loss = ping_result.get("packet_loss_pct", 100)
     stream_response = rtsp_result.get("response_ms") if rtsp_result else None
@@ -20,7 +24,7 @@ def classify_health(ping_result, rtsp_result, rtsp_url):
     if has_rtsp and rtsp_result and not rtsp_result.get("success"):
         return {
             "status": "STREAM_FAILURE",
-            "stream_status": "Ping OK; RTSP stream unavailable",
+            "stream_status": "Ping OK; RTSP port unreachable",
             "latency_ms": latency,
             "stream_response_ms": stream_response,
             "packet_loss_pct": packet_loss,
@@ -36,7 +40,7 @@ def classify_health(ping_result, rtsp_result, rtsp_url):
             "is_anomaly": 1,
         }
     if has_rtsp and rtsp_result and rtsp_result.get("success"):
-        stream_status = "Reachable; RTSP stream healthy"
+        stream_status = "Reachable; RTSP port open"
     else:
         stream_status = "Reachable"
     return {

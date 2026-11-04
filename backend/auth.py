@@ -1,8 +1,10 @@
-﻿"""Authentication helpers for UCEK-JNTUK CCTV Camera Health Monitoring System.
+"""Authentication helpers for UCEK-JNTUK CCTV Camera Health Monitoring System.
 
-Default login credentials:
-Username: admin
-Password: Admin@1234
+Provides JWT creation/validation, password hashing (PBKDF2-HMAC-SHA256),
+and request-level auth/role enforcement for the HTTP API.
+
+On first run, the admin password is randomly generated and printed once to
+stdout. See database.py:ensure_default_admin() for details.
 """
 
 import base64
@@ -65,7 +67,10 @@ def create_token(user_id, username, role, expires_hours=8):
     encoded_header = _b64url_encode(json.dumps(header, separators=(",", ":")).encode("utf-8"))
     encoded_payload = _b64url_encode(json.dumps(payload, separators=(",", ":")).encode("utf-8"))
     signing_input = f"{encoded_header}.{encoded_payload}".encode("ascii")
-    signature = hmac.new(JWT_SECRET.encode("utf-8"), signing_input, hashlib.sha256).digest()
+    _secret = JWT_SECRET.strip()
+    if not _secret:
+        raise RuntimeError("JWT_SECRET is not configured. Set a strong value in .env.")
+    signature = hmac.new(_secret.encode("utf-8"), signing_input, hashlib.sha256).digest()
     return f"{encoded_header}.{encoded_payload}.{_b64url_encode(signature)}"
 
 
@@ -76,7 +81,10 @@ def decode_token(token):
     except ValueError as exc:
         raise ValueError("Invalid token format") from exc
     signing_input = f"{header_part}.{payload_part}".encode("ascii")
-    expected = _b64url_encode(hmac.new(JWT_SECRET.encode("utf-8"), signing_input, hashlib.sha256).digest())
+    _secret = JWT_SECRET.strip()
+    if not _secret:
+        raise RuntimeError("JWT_SECRET is not configured. Set a strong value in .env.")
+    expected = _b64url_encode(hmac.new(_secret.encode("utf-8"), signing_input, hashlib.sha256).digest())
     if not hmac.compare_digest(signature_part, expected):
         raise ValueError("Invalid token signature")
     try:

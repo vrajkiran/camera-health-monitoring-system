@@ -14,6 +14,7 @@ CREATE TABLE IF NOT EXISTS cameras (
     switch_id TEXT NOT NULL,
     switch_ip TEXT NOT NULL DEFAULT '',
     rtsp_url TEXT NOT NULL,
+    probe_mode TEXT NOT NULL DEFAULT '',
     status TEXT NOT NULL CHECK(status IN ('ONLINE', 'OFFLINE', 'UNSTABLE', 'STREAM_FAILURE')),
     last_checked TEXT NOT NULL,
     latency_ms INTEGER,
@@ -172,6 +173,9 @@ CREATE TABLE IF NOT EXISTS maintenance_sessions (
     expected_end_time TEXT,
     completion_time TEXT,
     notes TEXT,
+    asset_type TEXT NOT NULL DEFAULT 'CAMERA',
+    asset_id TEXT NOT NULL DEFAULT '',
+    version INTEGER NOT NULL DEFAULT 1,
     created_at TEXT NOT NULL,
     FOREIGN KEY(camera_id) REFERENCES cameras(id)
 );
@@ -241,37 +245,39 @@ CREATE TABLE IF NOT EXISTS escalations (
 );"""
 
 DEMO_CAMERAS = [
-    ("Main Gate CAM-01", "Main Gate", "192.168.10.21", "SW-A", "192.168.10.2", "rtsp://192.168.10.21/live", "ONLINE", 18, "Reachable; RTSP stream healthy", 42),
+    ("Main Gate CAM-01", "Main Gate", "192.168.10.21", "SW-A", "192.168.10.2", "rtsp://192.168.10.21/live", "ONLINE", 18, "Reachable; RTSP port open", 42),
     ("Library Entrance CAM-02", "Library Block", "192.168.10.34", "SW-B", "192.168.10.3", "rtsp://192.168.10.34/live", "UNSTABLE", 184, "High latency", 86),
-    ("Canteen Corridor CAM-03", "Student Center", "192.168.10.49", "SW-C", "192.168.10.4", "rtsp://192.168.10.49/live", "ONLINE", 22, "Reachable; RTSP stream healthy", 51),
+    ("Canteen Corridor CAM-03", "Student Center", "192.168.10.49", "SW-C", "192.168.10.4", "rtsp://192.168.10.49/live", "ONLINE", 22, "Reachable; RTSP port open", 51),
     ("Admin Office CAM-04", "Admin Block", "192.168.10.58", "SW-A", "192.168.10.2", "rtsp://192.168.10.58/live", "OFFLINE", None, "No ping response", None),
-    ("Parking East CAM-05", "Parking Area", "192.168.10.71", "SW-D", "192.168.10.5", "rtsp://192.168.10.71/live", "ONLINE", 31, "Reachable; RTSP stream healthy", 47),
-    ("Lab Floor 2 CAM-06", "Engineering Block", "192.168.10.87", "SW-B", "192.168.10.3", "rtsp://192.168.10.87/live", "STREAM_FAILURE", 46, "Ping OK; RTSP stream unavailable", None),
-    ("ECE Block Entrance CAM-07", "ECE Block", "192.168.10.101", "SW-E", "192.168.10.6", "rtsp://192.168.10.101/live", "ONLINE", 29, "Reachable; RTSP stream healthy", 44),
-    ("Mechanical Workshop CAM-08", "Mechanical Block", "192.168.10.102", "SW-F", "192.168.10.7", "rtsp://192.168.10.102/live", "ONLINE", 34, "Reachable; RTSP stream healthy", 52),
+    ("Parking East CAM-05", "Parking Area", "192.168.10.71", "SW-D", "192.168.10.5", "rtsp://192.168.10.71/live", "ONLINE", 31, "Reachable; RTSP port open", 47),
+    ("Lab Floor 2 CAM-06", "Engineering Block", "192.168.10.87", "SW-B", "192.168.10.3", "rtsp://192.168.10.87/live", "STREAM_FAILURE", 46, "Ping OK; RTSP port unreachable", None),
+    ("ECE Block Entrance CAM-07", "ECE Block", "192.168.10.101", "SW-E", "192.168.10.6", "rtsp://192.168.10.101/live", "ONLINE", 29, "Reachable; RTSP port open", 44),
+    ("Mechanical Workshop CAM-08", "Mechanical Block", "192.168.10.102", "SW-F", "192.168.10.7", "rtsp://192.168.10.102/live", "ONLINE", 34, "Reachable; RTSP port open", 52),
     ("Civil Lab Corridor CAM-09", "Civil Block", "192.168.10.103", "SW-G", "192.168.10.8", "rtsp://192.168.10.103/live", "UNSTABLE", 162, "Intermittent packet delay", 78),
-    ("Exam Cell CAM-10", "Administrative Block", "192.168.10.104", "SW-A", "192.168.10.2", "rtsp://192.168.10.104/live", "ONLINE", 26, "Reachable; RTSP stream healthy", 39),
-    ("Principal Office CAM-11", "Administrative Block", "192.168.10.105", "SW-A", "192.168.10.2", "rtsp://192.168.10.105/live", "ONLINE", 24, "Reachable; RTSP stream healthy", 36),
+    ("Exam Cell CAM-10", "Administrative Block", "192.168.10.104", "SW-A", "192.168.10.2", "rtsp://192.168.10.104/live", "ONLINE", 26, "Reachable; RTSP port open", 39),
+    ("Principal Office CAM-11", "Administrative Block", "192.168.10.105", "SW-A", "192.168.10.2", "rtsp://192.168.10.105/live", "ONLINE", 24, "Reachable; RTSP port open", 36),
     ("Boys Hostel Gate CAM-12", "Boys Hostel", "192.168.10.106", "SW-H", "192.168.10.9", "rtsp://192.168.10.106/live", "OFFLINE", None, "No ping response", None),
-    ("Girls Hostel Gate CAM-13", "Girls Hostel", "192.168.10.107", "SW-I", "192.168.10.10", "rtsp://192.168.10.107/live", "ONLINE", 37, "Reachable; RTSP stream healthy", 58),
-    ("Seminar Hall CAM-14", "Seminar Hall", "192.168.10.108", "SW-J", "192.168.10.11", "rtsp://192.168.10.108/live", "ONLINE", 33, "Reachable; RTSP stream healthy", 45),
+    ("Girls Hostel Gate CAM-13", "Girls Hostel", "192.168.10.107", "SW-I", "192.168.10.10", "rtsp://192.168.10.107/live", "ONLINE", 37, "Reachable; RTSP port open", 58),
+    ("Seminar Hall CAM-14", "Seminar Hall", "192.168.10.108", "SW-J", "192.168.10.11", "rtsp://192.168.10.108/live", "ONLINE", 33, "Reachable; RTSP port open", 45),
     ("Server Room CAM-15", "IT Center", "192.168.10.109", "SW-K", "192.168.10.12", "rtsp://192.168.10.109/live", "STREAM_FAILURE", 41, "Ping OK; RTSP authentication failure", None),
-    ("Library Reading Hall CAM-16", "Library Block", "192.168.10.110", "SW-B", "192.168.10.3", "rtsp://192.168.10.110/live", "ONLINE", 28, "Reachable; RTSP stream healthy", 43),
+    ("Library Reading Hall CAM-16", "Library Block", "192.168.10.110", "SW-B", "192.168.10.3", "rtsp://192.168.10.110/live", "ONLINE", 28, "Reachable; RTSP port open", 43),
     ("Sports Ground CAM-17", "Sports Ground", "192.168.10.111", "SW-L", "192.168.10.13", "rtsp://192.168.10.111/live", "UNSTABLE", 171, "High latency", 82),
-    ("Auditorium Lobby CAM-18", "Auditorium", "192.168.10.112", "SW-M", "192.168.10.14", "rtsp://192.168.10.112/live", "ONLINE", 35, "Reachable; RTSP stream healthy", 48),
-    ("Chemistry Lab CAM-19", "Science Block", "192.168.10.113", "SW-N", "192.168.10.15", "rtsp://192.168.10.113/live", "ONLINE", 39, "Reachable; RTSP stream healthy", 56),
-    ("Physics Lab CAM-20", "Science Block", "192.168.10.114", "SW-N", "192.168.10.15", "rtsp://192.168.10.114/live", "ONLINE", 32, "Reachable; RTSP stream healthy", 49),
-    ("Bus Bay CAM-21", "Transport Area", "192.168.10.115", "SW-O", "192.168.10.16", "rtsp://192.168.10.115/live", "ONLINE", 43, "Reachable; RTSP stream healthy", 62),
+    ("Auditorium Lobby CAM-18", "Auditorium", "192.168.10.112", "SW-M", "192.168.10.14", "rtsp://192.168.10.112/live", "ONLINE", 35, "Reachable; RTSP port open", 48),
+    ("Chemistry Lab CAM-19", "Science Block", "192.168.10.113", "SW-N", "192.168.10.15", "rtsp://192.168.10.113/live", "ONLINE", 39, "Reachable; RTSP port open", 56),
+    ("Physics Lab CAM-20", "Science Block", "192.168.10.114", "SW-N", "192.168.10.15", "rtsp://192.168.10.114/live", "ONLINE", 32, "Reachable; RTSP port open", 49),
+    ("Bus Bay CAM-21", "Transport Area", "192.168.10.115", "SW-O", "192.168.10.16", "rtsp://192.168.10.115/live", "ONLINE", 43, "Reachable; RTSP port open", 62),
     ("Back Gate CAM-22", "Rear Entrance", "192.168.10.116", "SW-P", "192.168.10.17", "rtsp://192.168.10.116/live", "OFFLINE", None, "No ping response", None),
-    ("Placement Cell CAM-23", "Placement Block", "192.168.10.117", "SW-Q", "192.168.10.18", "rtsp://192.168.10.117/live", "ONLINE", 27, "Reachable; RTSP stream healthy", 40),
-    ("Academic Section CAM-24", "Academic Section", "192.168.10.118", "SW-R", "192.168.10.19", "rtsp://192.168.10.118/live", "ONLINE", 30, "Reachable; RTSP stream healthy", 46),
-    ("Central Corridor CAM-25", "Main Academic Block", "192.168.10.119", "SW-S", "192.168.10.20", "rtsp://192.168.10.119/live", "ONLINE", 36, "Reachable; RTSP stream healthy", 50),
+    ("Placement Cell CAM-23", "Placement Block", "192.168.10.117", "SW-Q", "192.168.10.18", "rtsp://192.168.10.117/live", "ONLINE", 27, "Reachable; RTSP port open", 40),
+    ("Academic Section CAM-24", "Academic Section", "192.168.10.118", "SW-R", "192.168.10.19", "rtsp://192.168.10.118/live", "ONLINE", 30, "Reachable; RTSP port open", 46),
+    ("Central Corridor CAM-25", "Main Academic Block", "192.168.10.119", "SW-S", "192.168.10.20", "rtsp://192.168.10.119/live", "ONLINE", 36, "Reachable; RTSP port open", 50),
 ]
 @contextmanager
 def connect():
     DATABASE_PATH.parent.mkdir(parents=True, exist_ok=True)
-    db = sqlite3.connect(DATABASE_PATH)
+    db = sqlite3.connect(DATABASE_PATH, check_same_thread=False)
     db.row_factory = sqlite3.Row
+    db.execute('PRAGMA journal_mode=WAL')
+    db.execute('PRAGMA synchronous=NORMAL')
     try:
         yield db
         db.commit()
@@ -337,11 +343,17 @@ def _rebuild_cameras_table(db):
 
 
 def _ensure_column(db, table, column, definition):
+    import re
+    if not re.match(r'^[a-zA-Z0-9_]+$', table) or not re.match(r'^[a-zA-Z0-9_]+$', column):
+        raise ValueError(f"Invalid table or column identifier: {table}.{column}")
     columns = [row["name"] for row in db.execute(f"PRAGMA table_info({table})").fetchall()]
     if column not in columns:
         db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 def migrate(db):
+    _ensure_column(db, "maintenance_sessions", "asset_type", "TEXT NOT NULL DEFAULT 'CAMERA'")
+    _ensure_column(db, "maintenance_sessions", "asset_id", "TEXT NOT NULL DEFAULT ''")
+    _ensure_column(db, "maintenance_sessions", "version", "INTEGER NOT NULL DEFAULT 1")
     _ensure_column(db, "cameras", "maintenance_status", "TEXT NOT NULL DEFAULT 'DISABLED'")
     _ensure_column(db, "cameras", "maintenance_reason", "TEXT NOT NULL DEFAULT ''")
     _ensure_column(db, "cameras", "maintenance_technician", "TEXT NOT NULL DEFAULT ''")
@@ -361,6 +373,7 @@ def migrate(db):
     columns = _camera_columns(db)
     if columns and "last_stream_check" not in columns:
         db.execute("ALTER TABLE cameras ADD COLUMN last_stream_check TEXT")
+    _ensure_column(db, "cameras", "probe_mode", "TEXT NOT NULL DEFAULT ''")
     if _camera_columns(db) and not _camera_schema_allows_stream_failure(db):
         _rebuild_cameras_table(db)
 
@@ -378,17 +391,27 @@ def ensure_settings(db):
 
 def ensure_default_admin(db):
     from auth import hash_password
+    import secrets as _secrets
     now = datetime.now().isoformat(timespec="seconds")
     count = db.execute("SELECT COUNT(*) AS total FROM users").fetchone()["total"]
     if count:
         return
+    # Generate a strong random password and print it ONCE so the operator can
+    # log in. It is never stored in plain text and never hard-coded.
+    generated_password = _secrets.token_urlsafe(16)
     db.execute(
         """
         INSERT INTO users (username, full_name, email, password_hash, role, is_active, created_at, last_login)
         VALUES (?, ?, ?, ?, ?, 1, ?, NULL)
         """,
-        ("admin", "UCEK Admin", "admin@ucek.ac.in", hash_password("Admin@1234"), "ADMINISTRATOR", now),
+        ("admin", "UCEK Admin", "admin@ucek.ac.in", hash_password(generated_password), "ADMINISTRATOR", now),
     )
+    print("=" * 60)
+    print("  FIRST-RUN: Default admin account created.")
+    print("  Username : admin")
+    print(f"  Password : {generated_password}")
+    print("  SAVE THIS PASSWORD - it will not be shown again.")
+    print("=" * 60)
 
 
 def ensure_demo_cameras(db):
@@ -402,8 +425,8 @@ def ensure_demo_cameras(db):
         cursor = db.execute(
             """
             INSERT INTO cameras
-            (name, location, ip_address, switch_id, switch_ip, rtsp_url, status, last_checked, latency_ms, stream_status, stream_response_ms, last_stream_check)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (name, location, ip_address, switch_id, switch_ip, rtsp_url, probe_mode, status, last_checked, latency_ms, stream_status, stream_response_ms, last_stream_check)
+            VALUES (?, ?, ?, ?, ?, ?, 'SIMULATED', ?, ?, ?, ?, ?, ?)
             """,
             (*camera[:7], checked_at, camera[7], camera[8], camera[9], checked_at),
         )
@@ -445,8 +468,8 @@ def init_db():
                 db.execute(
                     """
                     INSERT INTO cameras
-                    (name, location, ip_address, switch_id, switch_ip, rtsp_url, status, last_checked, latency_ms, stream_status, stream_response_ms, last_stream_check)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    (name, location, ip_address, switch_id, switch_ip, rtsp_url, probe_mode, status, last_checked, latency_ms, stream_status, stream_response_ms, last_stream_check)
+                    VALUES (?, ?, ?, ?, ?, ?, 'SIMULATED', ?, ?, ?, ?, ?, ?)
                     """,
                     (*camera[:7], checked_at, camera[7], camera[8], camera[9], checked_at),
                 )

@@ -1,7 +1,10 @@
 ﻿"""Background scheduler for periodic predictive model retraining."""
 
+import logging
 import threading
 import time
+
+LOGGER = logging.getLogger(__name__)
 
 from ml.risk_engine import train_from_database
 
@@ -25,4 +28,4 @@ class ModelTrainingScheduler:
             try:
                 train_from_database()
             except Exception:
-                pass
+                LOGGER.exception("Predictive model retraining failed")

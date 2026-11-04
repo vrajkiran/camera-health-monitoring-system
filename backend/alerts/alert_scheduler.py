@@ -1,7 +1,10 @@
 ﻿"""Background scheduler for escalation advancement and periodic risk predictions."""
 
+import logging
 import threading
 import time
+
+LOGGER = logging.getLogger(__name__)
 
 from escalation_engine import EscalationEngine
 from incidents import IncidentService
@@ -41,7 +44,7 @@ class AlertScheduler:
                     run_all_predictions()
                     last_prediction = now
             except Exception:
-                pass
+                LOGGER.exception("Alert scheduler cycle failed")
             time.sleep(self.interval_seconds)
 
 

@@ -24,11 +24,13 @@ def send_email_report(subject, body, html=False):
     message["From"] = GMAIL_USER
     message["To"] = ADMIN_EMAIL
 
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as smtp:
-        smtp.login(GMAIL_USER, GMAIL_APP_PASSWORD)
-        smtp.sendmail(GMAIL_USER, [ADMIN_EMAIL], message.as_string())
-
-    return {"sent": True, "channel": "EMAIL"}
+    try:
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=15) as smtp:
+            smtp.login(GMAIL_USER, GMAIL_APP_PASSWORD)
+            smtp.sendmail(GMAIL_USER, [ADMIN_EMAIL], message.as_string())
+        return {"sent": True, "channel": "EMAIL"}
+    except Exception as exc:
+        return {"sent": False, "channel": "EMAIL", "reason": f"SMTP delivery failed: {exc}"}
 
 
 def send_telegram_message(text, reply_markup=None):
@@ -42,10 +44,12 @@ def send_telegram_message(text, reply_markup=None):
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     request = urllib.request.Request(url, data=payload, method="POST")
 
-    with urllib.request.urlopen(request, timeout=15) as response:
-        data = json.loads(response.read().decode("utf-8"))
-
-    return {"sent": bool(data.get("ok")), "channel": "TELEGRAM", "telegram_response": data}
+    try:
+        with urllib.request.urlopen(request, timeout=15) as response:
+            data = json.loads(response.read().decode("utf-8"))
+        return {"sent": bool(data.get("ok")), "channel": "TELEGRAM", "telegram_response": data}
+    except Exception as exc:
+        return {"sent": False, "channel": "TELEGRAM", "reason": f"Telegram delivery failed: {exc}"}
 
 
 def build_alert_message(camera_name, location, root_cause):

@@ -1,6 +1,6 @@
-﻿"""Scheduler that runs ping and RTSP checks and publishes health changes."""
+﻿"""Scheduler that runs ping and RTSP-port checks and publishes health changes."""
 
-import random
+import logging
 import threading
 import time
 from datetime import datetime
@@ -8,59 +8,10 @@ from datetime import datetime
 from database import connect, row_to_dict
 from diagnosis_engine import diagnose_camera
 from incidents import IncidentService
-from monitoring.health_classifier import classify_health
-from monitoring.ping_monitor import run_ping
-from monitoring.rtsp_monitor import check_rtsp
+from monitoring.probe import probe_camera
 from websocket.event_dispatcher import dispatch
 
-
-
-def _send_automatic_telegram(message):
-    try:
-        import sys
-        from pathlib import Path
-        backend_dir = Path(__file__).resolve().parents[1]
-        if str(backend_dir) not in sys.path:
-            sys.path.insert(0, str(backend_dir))
-        from alerts import send_telegram_message
-        return send_telegram_message(message)
-    except Exception as exc:
-        return {"sent": False, "reason": str(exc)}
-
-
-def _record_notification(db, notification_type, camera, diagnosis, delivery, now):
-    db.execute(
-        """
-        INSERT INTO notification_history
-        (notification_type, recipient, status, delivery_result, camera_id, camera_name, severity, diagnosis, confidence, recommended_action, resolution_status, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """,
-        (
-            notification_type,
-            "Configured Telegram Chat",
-            "DELIVERED" if delivery.get("sent") else "SKIPPED",
-            delivery.get("reason") or delivery.get("channel") or "Automatic notification event recorded",
-            camera["id"],
-            camera["name"],
-            diagnosis["severity"],
-            diagnosis["diagnosis"],
-            diagnosis["confidence"],
-            diagnosis["recommended_solution"],
-            "OPEN",
-            now,
-        ),
-    )
-def _escalation_engine():
-    try:
-        import sys
-        from pathlib import Path
-        alerts_dir = Path(__file__).resolve().parents[1] / "alerts"
-        if str(alerts_dir) not in sys.path:
-            sys.path.insert(0, str(alerts_dir))
-        from escalation_engine import EscalationEngine
-        return EscalationEngine()
-    except Exception:
-        return None
+LOGGER = logging.getLogger(__name__)
 
 
 class MonitorScheduler:
@@ -70,6 +21,8 @@ class MonitorScheduler:
         self.interval_seconds = interval_seconds
         self._started = False
         self._lock = threading.Lock()
+        self.last_success_at = None
+        self.last_error = None
 
     def run_once(self):
         now = datetime.now().isoformat(timespec="seconds")
@@ -78,7 +31,7 @@ class MonitorScheduler:
                 cameras = [row_to_dict(row) for row in db.execute("SELECT * FROM cameras ORDER BY id").fetchall()]
                 for camera in cameras:
                     previous_status = camera.get("status")
-                    health = self._check_camera(camera)
+                    health = probe_camera(camera)
                     db.execute(
                         """
                         INSERT INTO ping_history (camera_id, response_time_ms, packet_loss_pct, recorded_at, is_anomaly)
@@ -101,37 +54,9 @@ class MonitorScheduler:
                     if health["status"] != previous_status:
                         self._record_status_change(db, camera, previous_status, health, now)
                         self._dispatch_status_change(camera, previous_status, health)
+        self.last_success_at = now
+        self.last_error = None
         return {"ok": True, "checked": len(cameras), "at": now}
-
-    def _check_camera(self, camera):
-        ip_address = camera.get("ip_address") or ""
-        rtsp_url = camera.get("rtsp_url") or ""
-        if ip_address.startswith("192.168.10."):
-            ping_result = self._demo_ping(camera)
-            rtsp_result = self._demo_rtsp(camera, rtsp_url, ping_result)
-        else:
-            ping_result = run_ping(ip_address)
-            rtsp_result = check_rtsp(rtsp_url)
-        return classify_health(ping_result, rtsp_result, rtsp_url)
-
-    @staticmethod
-    def _demo_ping(camera):
-        if camera.get("status") == "OFFLINE" and random.random() < 0.7:
-            return {"success": False, "latency_ms": None, "packet_loss_pct": 100}
-        base = 18 + int(camera["id"]) * 4
-        jitter = random.randint(0, 170 if int(camera["id"]) in (2, 6) else 35)
-        latency = base + jitter
-        return {"success": True, "latency_ms": latency, "packet_loss_pct": 10 if latency > 155 else 0}
-
-    @staticmethod
-    def _demo_rtsp(camera, rtsp_url, ping_result):
-        if not rtsp_url:
-            return {"success": False, "response_ms": None, "error": "No RTSP URL configured"}
-        if not ping_result.get("success"):
-            return {"success": False, "response_ms": None, "error": "Camera unreachable"}
-        if int(camera["id"]) == 3 and random.random() < 0.35:
-            return {"success": False, "response_ms": None, "error": "RTSP port unavailable"}
-        return {"success": True, "response_ms": random.randint(24, 95), "error": None}
 
     @staticmethod
     def _record_status_change(db, camera, previous_status, health, now):
@@ -199,17 +124,28 @@ class MonitorScheduler:
         while True:
             try:
                 self.run_once()
-            except Exception:
-                pass
+            except Exception as exc:
+                LOGGER.exception("Camera health monitor tick failed")
+                self.last_error = str(exc)
             time.sleep(self.interval_seconds)
 
     def trigger(self):
         return self.run_once()
 
-
-
-
-
-
-
-
+    def runtime_status(self):
+        last = self.last_success_at
+        stale = True
+        if last:
+            try:
+                age = (datetime.now() - datetime.fromisoformat(last)).total_seconds()
+                stale = age > (self.interval_seconds * 3 + 15)
+            except Exception:
+                stale = True
+        alive = bool(self._started) and last and not stale and not self.last_error
+        return {
+            "started": self._started,
+            "last_success_at": last,
+            "last_error": self.last_error,
+            "stale": stale,
+            "alive": alive,
+        }
