@@ -4,6 +4,7 @@ import { CameraToolbar } from '../components/cameras/CameraToolbar';
 import { CameraCard } from '../components/cameras/CameraCard';
 import { CameraTableView } from '../components/cameras/CameraTableView';
 import { CameraDetailsDrawer } from '../components/cameras/CameraDetailsDrawer';
+import { CameraManagementPage } from './CameraManagementPage';
 import { Camera } from '../types/camera';
 import { triggerCameraProbe } from '../services/cameraService';
 
@@ -30,6 +31,25 @@ export const CamerasPage: React.FC = () => {
   } = useCamerasData();
 
   const [bannerNotice, setBannerNotice] = useState<string | null>(null);
+  const [editingCamera, setEditingCamera] = useState<Camera | null>(null);
+  const [isCreatingNew, setIsCreatingNew] = useState<boolean>(false);
+
+  if (isCreatingNew || editingCamera) {
+    return (
+      <CameraManagementPage
+        initialCamera={editingCamera}
+        onSuccess={() => {
+          setIsCreatingNew(false);
+          setEditingCamera(null);
+          refresh();
+        }}
+        onCancel={() => {
+          setIsCreatingNew(false);
+          setEditingCamera(null);
+        }}
+      />
+    );
+  }
 
   const handleProbeCamera = async (camera: Camera) => {
     setBannerNotice(`Pinging node ${camera.name} (${camera.ip_address})...`);
@@ -62,8 +82,8 @@ export const CamerasPage: React.FC = () => {
           </p>
         </div>
 
-        {/* Global Summary Badge */}
-        <div className="flex items-center gap-2">
+        {/* Global Summary Badge & Add Camera CTA */}
+        <div className="flex items-center gap-3">
           <div className="px-3 py-1.5 rounded-xl bg-white dark:bg-[#11192b] border border-slate-200 dark:border-slate-800 text-xs font-semibold flex items-center gap-3 shadow-xs">
             <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
               <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
@@ -75,6 +95,15 @@ export const CamerasPage: React.FC = () => {
               {statusCounts.OFFLINE ?? 1} Offline
             </span>
           </div>
+
+          <button
+            onClick={() => setIsCreatingNew(true)}
+            aria-label="Provision new camera node"
+            className="px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <span className="material-symbols-outlined text-[16px]">add</span>
+            <span>Add Camera</span>
+          </button>
         </div>
       </div>
 
@@ -182,6 +211,7 @@ export const CamerasPage: React.FC = () => {
         camera={selectedCamera}
         onClose={() => setSelectedCameraId(null)}
         onRefreshParent={refresh}
+        onEditCamera={(c) => setEditingCamera(c)}
       />
     </div>
   );
