@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import { DashboardPage } from '../pages/DashboardPage';
+import { CamerasPage } from '../pages/CamerasPage';
 
 interface AppShellProps {
   children?: React.ReactNode;
@@ -158,6 +159,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
             children
           ) : activeNav === 'dashboard' ? (
             <DashboardPage />
+          ) : activeNav === 'cameras' ? (
+            <CamerasPage />
           ) : (
             <div className="space-y-4 max-w-7xl mx-auto">
               <div className="p-4 rounded-2xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 text-amber-800 dark:text-amber-200 text-xs flex items-center justify-between">
